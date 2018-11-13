@@ -1,0 +1,52 @@
+.priority{
+  color: grey;
+}
+
+.important{
+  color: red;
+}
+.isImportant>.topLine{
+  text-decoration: underline;
+  text-decoration-color: red;
+  text-decoration-style: dotted;
+}
+
+.isWorkable>.topLine{
+  color: green;
+}
+
+.isProjectPriority>.topLine{
+  font-weight: bold;
+}
+
+.email{
+  color: gray;
+}
+.email::before{
+  margin-right: .5em;
+}
+
+.hidden{
+  position: absolute;
+  opacity: 0;
+  z-index: -1000;
+  pointer-events: none;
+}
+
+.timeEstimate{
+  background-color: pink;
+}
+
+a:link, a:visited, a:active, .tag{
+  color: grey;
+  text-decoration: underline;
+  text-decoration-color: lightgray;
+}
+.tag{
+  text-decoration: none;
+}
+.tag:hover{
+  background-color: #f1f1f1;
+  border-radius: 4px;
+  cursor: pointer;
+}

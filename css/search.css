@@ -1,0 +1,28 @@
+/*
+useful for something else
+.searching .note>.topLine{
+  display: none;
+}
+.searching .note.found>.topLine{
+  display: flex;
+}
+.searching .children{
+  border-left: none;
+  margin-left: 0;
+  padding-left: 0;
+}
+*/
+
+.searching .note>.topLine{
+  display: none;
+}
+.searching .note.foundAncestor>.topLine{
+  display: flex;
+}
+.searching .note.found>.topLine{
+  display: flex;
+}
+
+.foundAncestor:not(.found)>.topLine{
+  color: lightgray;
+}

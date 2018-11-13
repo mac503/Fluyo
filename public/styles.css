@@ -1,0 +1,422 @@
+*{
+  box-sizing: border-box;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+    -webkit-border-radius: 10px;
+    border-radius: 10px;
+    background: gray;
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
+}
+
+body{
+  font-family: Droid Sans;
+  font-size: 13px;
+  color: rgb(51, 51, 51);
+  padding: 0px;
+  margin: 0px;
+}
+
+input{
+  font-family: Helvetica;
+  font-size: 11px;
+  color: rgb(51, 51, 51);
+}
+
+#topbar{
+  width: 100%;
+  border-bottom: solid 1px #f1f1f1;
+  background-color: white;
+  z-index: 99999;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1px;
+  color: lightgray;
+  position: fixed;
+  overflow-x: visible;
+}
+
+#navigationHome{
+  padding: 8px;
+  cursor: pointer;
+}
+
+#todoIcon{
+  padding: 8px;
+  cursor: pointer;
+}
+
+#outlineIcon{
+  padding: 8px;
+  cursor: pointer;
+}
+
+#inboxIcon{
+  color: #96DED1;
+  margin-left: auto;
+  padding: 8px;
+  cursor: pointer;
+}
+
+#toggleCompleted{
+  padding: 8px;
+  margin-left: 24px;
+  cursor: pointer;
+}
+
+.showCompleted #toggleCompleted{
+  color: gray;
+}
+
+#search{
+  padding: 8px;
+  width: 15%;
+}
+
+#searchBoxHolder{
+  display: inline-block;
+  border: 1px solid lightgray;
+  border-radius: 20px;
+  padding: 3px;
+  padding-left: 6px;
+  padding-right: 6px;
+  width: 100%;
+}
+
+#searchBoxHolder input{
+  border: none;
+  width: 100%;
+}
+
+#searchBoxHolder input::placeholder{
+  font: 900 1em 'Font Awesome 5 Free';
+  color: lightgray;
+  text-align: right;
+}
+
+div, input{
+  outline: none;
+}
+
+#content{
+  padding: 3em;
+  padding-top: 8em;
+  margin-bottom: 14em;
+}
+
+#content>div{
+  display:none;
+}
+
+body[data-display='inbox'] #inbox{
+  display: block;
+}
+body[data-display='outline'] #outline{
+  display: block;
+}
+body[data-display='todo'] #todo{
+  display: block;
+}
+
+#outline, #inbox, #todo{
+  width: 40%;
+  margin: auto;
+  position: relative;
+}
+
+#breadcrumbs{
+  display: none;
+}
+body[data-display='outline'] #breadcrumbs{
+  display: inline-block;
+}
+#breadcrumbs span{
+  color: gray;
+  cursor: pointer;
+}
+#breadcrumbs span::before{
+  cursor: default;
+  color: lightgray;
+  content: ">";
+  padding-left: 1em;
+  padding-right: 1em;
+}
+.note{
+  display: block;
+}
+
+.topLine{
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: top;
+}
+
+.left{
+  padding-top: 3px;
+  display: flex;
+  align-items: center;
+  height: 1em;
+}
+
+.toggle{
+  position: relative;
+  width: .5em;
+  height: .5em;
+  margin-right: .4em;
+  cursor: pointer;
+  visibility: hidden;
+}
+.isParent>.topLine:hover .toggle{
+  visibility: visible;
+}
+.toggle::before, .toggle::after{
+  content: "";
+  display: block;
+  position: absolute;
+  top: 38%;
+  height: 24%;
+  width: 100%;
+  border-radius: 15%;
+  background-color: black;
+}
+.isCollapsed>.topLine .toggle::after{
+  transform: rotate(90deg);
+}
+
+.isCollapsed>.children{
+  display: none;
+}
+
+.bullet{
+  display: block;
+  position: relative;
+  height: 1em;
+  width: 1em;
+  cursor: pointer;
+}
+.bullet::before{
+  display: block;
+  position: relative;
+  top: -12.5%;
+  left: -12.5%;
+  width: 125%;
+  height: 125%;
+  z-index: -1;
+  border-radius: 100%;
+  content: "";
+  background-color: lightgray;
+  visibility: hidden;
+}
+.isParent.isCollapsed>.topLine .bullet::before{
+  visibility: visible;
+}
+.bullet:hover::before{
+  visibility: visible;
+  background-color: darkgray;
+}
+
+:not(.isTodo)>.topLine .bullet::after, .note>.topLine .bullet:hover::after{
+  position: absolute;
+  top: 25%;
+  left: 25%;
+  width: 50%;
+  height: 50%;
+  border-radius: 100%;
+  background-color: gray;
+  background-image: none;
+  content: "";
+  display: block;
+}
+.isTodo>.topLine .bullet::after{
+  position: absolute;
+  top: calc(25% - 1px);
+  left: calc(25% - 1px);
+  width: 50%;
+  height: 50%;
+  border: 1px solid gray;
+  border-radius: 15%;
+  background-color: white;
+  content: "";
+  display: block;
+}
+.isTodo.isComplete>.topLine .bullet::after{
+
+}
+.isNote>.topLine .bullet::after{
+  top: 20%;
+  left: 27.5%;
+  width: 45%;
+  height: 60%;
+  border-radius: 0;
+  background-image: linear-gradient(gray, gray 20%, white 20%, white 40%, gray 40%, gray 60%, white 60%, white 80%, gray 80%, gray 100%);
+}
+.isNote>.topLine .bullet:hover::after{
+  left: calc(27.5% - 1px);
+  border-left: 1px solid gray;
+  border-right: 1px solid gray;
+}
+
+.contentHolder{
+  position: relative;
+  margin-left: .4em;
+  width: 100%;
+}
+.dragDropTop{
+  width: 100%;
+  height: 50%;
+  position: absolute;
+  display: block;
+  z-index: 50;
+  background-color: transparent;
+}
+.dragDropTop:hover{
+  border-top: 2px solid blue;
+}
+.dragDropBottom{
+  width: 100%;
+  height: 50%;
+  top: 50%;
+  position: absolute;
+  display: block;
+  z-index: 50;
+  background-color: transparent;
+}
+.dragDropBottom:hover{
+  border-bottom: 2px solid blue;
+}
+:not(.dragDropHappening) .dragDropTop, :not(.dragDropHappening) .dragDropBottom{
+  display: none;
+}
+
+.content{
+  outline: 0px solid transparent;
+}
+
+.children{
+  margin-left: 1.4em;
+  border-left: 1px solid lightgray;
+  margin-top: .3em;
+  padding-left: .3em;
+}
+
+.zoom>.topLine>.left{
+  display: none;
+}
+.zoom>.topLine>.contentHolder>.content{
+  font-size: 24px;
+  font-weight: bold;
+}
+.zoom>.children{
+  margin-left: -.5em;
+  border-left: none;
+  margin-top: 1em;
+  padding-left: 0;
+}
+.zooming .note:not(.zoom){
+  pointer-events: none;
+  visibility: hidden;
+}
+.zoom{
+  position: absolute;
+  top:0;
+  left:0;
+  pointer-events: all;
+  visibility: visible;
+}
+.zooming .zoom .note{
+  pointer-events: all;
+  visibility: visible;
+}
+
+.isCompleteOrigin>.topLine>.contentHolder>.content{
+  text-decoration: line-through;
+}
+.isCompleteOrigin{
+  color: gray;
+}
+/*
+useful for something else
+.searching .note>.topLine{
+  display: none;
+}
+.searching .note.found>.topLine{
+  display: flex;
+}
+.searching .children{
+  border-left: none;
+  margin-left: 0;
+  padding-left: 0;
+}
+*/
+
+.searching .note>.topLine{
+  display: none;
+}
+.searching .note.foundAncestor>.topLine{
+  display: flex;
+}
+.searching .note.found>.topLine{
+  display: flex;
+}
+
+.foundAncestor:not(.found)>.topLine{
+  color: lightgray;
+}
+.priority{
+  color: grey;
+}
+
+.important{
+  color: red;
+}
+.isImportant>.topLine{
+  text-decoration: underline;
+  text-decoration-color: red;
+  text-decoration-style: dotted;
+}
+
+.isWorkable>.topLine{
+  color: green;
+}
+
+.isProjectPriority>.topLine{
+  font-weight: bold;
+}
+
+.email{
+  color: gray;
+}
+.email::before{
+  margin-right: .5em;
+}
+
+.hidden{
+  position: absolute;
+  opacity: 0;
+  z-index: -1000;
+  pointer-events: none;
+}
+
+.timeEstimate{
+  background-color: pink;
+}
+
+a:link, a:visited, a:active, .tag{
+  color: grey;
+  text-decoration: underline;
+  text-decoration-color: lightgray;
+}
+.tag{
+  text-decoration: none;
+}
+.tag:hover{
+  background-color: #f1f1f1;
+  border-radius: 4px;
+  cursor: pointer;
+}

@@ -1,0 +1,194 @@
+.note{
+  display: block;
+}
+
+.topLine{
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: top;
+}
+
+.left{
+  padding-top: 3px;
+  display: flex;
+  align-items: center;
+  height: 1em;
+}
+
+.toggle{
+  position: relative;
+  width: .5em;
+  height: .5em;
+  margin-right: .4em;
+  cursor: pointer;
+  visibility: hidden;
+}
+.isParent>.topLine:hover .toggle{
+  visibility: visible;
+}
+.toggle::before, .toggle::after{
+  content: "";
+  display: block;
+  position: absolute;
+  top: 38%;
+  height: 24%;
+  width: 100%;
+  border-radius: 15%;
+  background-color: black;
+}
+.isCollapsed>.topLine .toggle::after{
+  transform: rotate(90deg);
+}
+
+.isCollapsed>.children{
+  display: none;
+}
+
+.bullet{
+  display: block;
+  position: relative;
+  height: 1em;
+  width: 1em;
+  cursor: pointer;
+}
+.bullet::before{
+  display: block;
+  position: relative;
+  top: -12.5%;
+  left: -12.5%;
+  width: 125%;
+  height: 125%;
+  z-index: -1;
+  border-radius: 100%;
+  content: "";
+  background-color: lightgray;
+  visibility: hidden;
+}
+.isParent.isCollapsed>.topLine .bullet::before{
+  visibility: visible;
+}
+.bullet:hover::before{
+  visibility: visible;
+  background-color: darkgray;
+}
+
+:not(.isTodo)>.topLine .bullet::after, .note>.topLine .bullet:hover::after{
+  position: absolute;
+  top: 25%;
+  left: 25%;
+  width: 50%;
+  height: 50%;
+  border-radius: 100%;
+  background-color: gray;
+  background-image: none;
+  content: "";
+  display: block;
+}
+.isTodo>.topLine .bullet::after{
+  position: absolute;
+  top: calc(25% - 1px);
+  left: calc(25% - 1px);
+  width: 50%;
+  height: 50%;
+  border: 1px solid gray;
+  border-radius: 15%;
+  background-color: white;
+  content: "";
+  display: block;
+}
+.isTodo.isComplete>.topLine .bullet::after{
+
+}
+.isNote>.topLine .bullet::after{
+  top: 20%;
+  left: 27.5%;
+  width: 45%;
+  height: 60%;
+  border-radius: 0;
+  background-image: linear-gradient(gray, gray 20%, white 20%, white 40%, gray 40%, gray 60%, white 60%, white 80%, gray 80%, gray 100%);
+}
+.isNote>.topLine .bullet:hover::after{
+  left: calc(27.5% - 1px);
+  border-left: 1px solid gray;
+  border-right: 1px solid gray;
+}
+
+.contentHolder{
+  position: relative;
+  margin-left: .4em;
+  width: 100%;
+}
+.dragDropTop{
+  width: 100%;
+  height: 50%;
+  position: absolute;
+  display: block;
+  z-index: 50;
+  background-color: transparent;
+}
+.dragDropTop:hover{
+  border-top: 2px solid blue;
+}
+.dragDropBottom{
+  width: 100%;
+  height: 50%;
+  top: 50%;
+  position: absolute;
+  display: block;
+  z-index: 50;
+  background-color: transparent;
+}
+.dragDropBottom:hover{
+  border-bottom: 2px solid blue;
+}
+:not(.dragDropHappening) .dragDropTop, :not(.dragDropHappening) .dragDropBottom{
+  display: none;
+}
+
+.content{
+  outline: 0px solid transparent;
+}
+
+.children{
+  margin-left: 1.4em;
+  border-left: 1px solid lightgray;
+  margin-top: .3em;
+  padding-left: .3em;
+}
+
+.zoom>.topLine>.left{
+  display: none;
+}
+.zoom>.topLine>.contentHolder>.content{
+  font-size: 24px;
+  font-weight: bold;
+}
+.zoom>.children{
+  margin-left: -.5em;
+  border-left: none;
+  margin-top: 1em;
+  padding-left: 0;
+}
+.zooming .note:not(.zoom){
+  pointer-events: none;
+  visibility: hidden;
+}
+.zoom{
+  position: absolute;
+  top:0;
+  left:0;
+  pointer-events: all;
+  visibility: visible;
+}
+.zooming .zoom .note{
+  pointer-events: all;
+  visibility: visible;
+}
+
+.isCompleteOrigin>.topLine>.contentHolder>.content{
+  text-decoration: line-through;
+}
+.isCompleteOrigin{
+  color: gray;
+}
