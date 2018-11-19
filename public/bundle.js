@@ -425,6 +425,9 @@ Search.prototype.apply = function(){
 }
 
 },{}],6:[function(require,module,exports){
+//module to collect subsequent changes made based on a set of original changes
+//once collected all together, they can then be applied to the DOM or written to the database
+
 function Change(id, changes, changeList){
   var topLevel = false;
   if(changeList === undefined){
@@ -450,9 +453,10 @@ function Change(id, changes, changeList){
     if(changeList[id] === undefined) changeList[id] = {};
     changeList[id][change.prop] = change.value;
 
-    //return to prevent checking every time we change text
+    //return to prevent checking everything else every time we change text
     if(change.prop == 'content') return changeList;
 
+    //now (for other types of changes) deal with any subsequent changes
     var note = model[id];
 
     switch(change.prop){
