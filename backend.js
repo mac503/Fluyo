@@ -38,21 +38,44 @@ app.get('/', function(req, res){
 });
 
 app.get('/api', function(req, res){
-  res.json(modelRaw);
+  res.json(modelRaw.filter(x => x.parentId != 'deleted'));
 });
 
-app.post('/api', function(req, res){
+app.post('/api', async function(req, res){
+  console.log(req.body.changes);
+  if(model[req.body.id] == undefined){
+    var result = await createNew(req.body.id);
+    console.log('RESULT');
+    console.log(result);
+    if(result == 0) return;
+  }
+  console.log('making changes');
   var changeList = new Change(req.body.id, req.body.changes);
   console.log(JSON.stringify(changeList));
-  var result = 1;
-  Object.keys(changeList).forEach(function(id){
-    knex('notes').where({id: id}).update(changeList[id]).then(x => result *= x);
+  multiUpdate(changeList).then(function(result){
+    res.json(result);
   });
-  res.json(result);
 });
 
-app.put('/api', function(req, res){
-  res.json('{"Putting"}');
-});
+async function createNew(id){
+  await knex('notes').insert({id: id}, 'id').then(x => console.log(x));
+  console.log('geting new one');
+  await knex('notes').where({id: id}).then(function(results){
+    console.log(results);
+    modelRaw.push(JSON.parse(JSON.stringify(results))[0]);
+    model[id] = modelRaw.find(x => x.id == id);
+  });
+  return 1;
+}
+
+async function multiUpdate(changeList){
+  var result = 1;
+  for(var id in changeList){
+    if(changeList.hasOwnProperty(id)){
+      await knex('notes').where({id: id}).update(changeList[id]).then(x => result *= x);
+    }
+  }
+  return result;
+}
 
 app.listen(process.env.PORT || 3000)

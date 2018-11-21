@@ -5,8 +5,11 @@ var cases = [];
 module.exports = function(text, id, changeList){
   cases.forEach(function(rcase){
     //check for match(es), if none apply the false value
+    if(changeList == undefined && rcase.waitForThrottle) return;
+    console.log('backend?')
     if(rcase.regexp.test(text) == false){
-      if(id != undefined && rcase.prop) new Change(id, [{prop:rcase.prop, value:rcase.updateValueFalse}], changeList);
+      //only make the update if it's not already that value
+      if(id != undefined && rcase.prop && rcase.updateValueFalse && model[id][rcase.prop] != rcase.updateValueFalse) new Change(id, [{prop:rcase.prop, value:rcase.updateValueFalse}], changeList);
     }
     //replace matches
     else text = text.replace(rcase.regexp, function(match){
@@ -24,8 +27,8 @@ module.exports = function(text, id, changeList){
         var updateResult;
         if(typeof rcase.updateTemplate === 'string' || rcase.updateTemplate instanceof String) updateResult = fill(rcase.updateTemplate, match, groups, original, processResult);
         else updateResult = rcase.updateTemplate;
-        new Change(id, [{prop:rcase.prop, value:updateResult}], changeList);
-        model[id][rcase.prop]
+        //only make changes if we need to
+        if(model[id][rcase.prop] != updateResult) new Change(id, [{prop:rcase.prop, value:updateResult}], changeList);
       }
 
       return fill(rcase.replaceTemplate, match, groups, original, processResult);
@@ -42,14 +45,15 @@ function fill(template, match, groups, original, processResult){
 
 function Case(options){
   var self = this;
-  ['regexp', 'prop', 'updateTemplate', 'updateValueFalse', 'replaceTemplate', 'processFunc'].forEach(x=> self[x] = options[x]);
+  ['regexp', 'prop', 'updateTemplate', 'updateValueFalse', 'replaceTemplate', 'processFunc', 'waitForThrottle'].forEach(x=> self[x] = options[x]);
   cases.push(self);
 }
 
-// // = note
+
+// // = memo
 new Case({
   regexp: /^\/\/.*/,
-  prop: 'isNoteOrigin',
+  prop: 'isMemo',
   updateTemplate: true,
   updateValueFalse: false,
   replaceTemplate: '${this.original}',
@@ -58,8 +62,8 @@ new Case({
 
 // *-***** = project priority
 new Case({
-  regexp: /(^|\s)(\*{1,5})(\s|$)/,
-  prop: 'isProjectPriority',
+  regexp: /(^|\s)(\*{1,25})(\s|$)/,
+  prop: 'isProjectAndIfSoPriority',
   updateTemplate: '${this.processResult}',
   updateValueFalse: false,
   replaceTemplate: '${this.groups[0]}<span class=\'priority\'>${this.groups[1]}</span>${this.groups[2]}',
@@ -69,7 +73,7 @@ new Case({
 });
 
 // ! = important
-new Case({
+/*new Case({
   regexp: /(^|\s)(!)(\s|$)/,
   prop: 'isImportant',
   updateTemplate: true,
@@ -77,16 +81,7 @@ new Case({
   replaceTemplate: '${this.groups[0]}<span class=\'important\'>${this.groups[1]}</span>${this.groups[2]}',
   processFunc: null
 });
-
-// [+] = workable
-new Case({
-  regexp: /\[\+\]/,
-  prop: 'isWorkable',
-  updateTemplate: true,
-  updateValueFalse: false,
-  replaceTemplate: '${this.match}',
-  processFunc: null
-});
+*/
 
 // https://mail.google.com/mail/?=? = email icon link
 new Case({
@@ -124,6 +119,78 @@ new Case({
   processFunc: null
 });
 
+//due date
+new Case({
+  waitForThrottle: true,
+  regexp: /(?:^|\s)due (?:(today|tomorrow)|(next )?((?:mon|tues|wednes|thurs|fri|sat|sun)day)|(next week|next month)|(in) (?:(1) (week|day|month)|(\d*) (days|weeks|months)))(?:\s|$)/,
+  prop: 'dueDate',
+  updateTemplate: '${this.processResult.toISOString()}',
+  updateValueFalse: undefined,
+  replaceTemplate: '',
+  replacePermanently: true,
+  processFunc: function(match, groups, original){
+    var date = new Date();
+    date.setHours(9,0,0,0);
+    groups.unshift('');
+    if(groups[1]){
+      if(groups[1] == 'today') return date;
+      else{
+        date.setDate(date.getDate()+1);
+        return date;
+      }
+    }
+    else if(groups[3]){
+      var nextExplicit = false;
+      if(groups[2] == 'next') nextExplicit = true;
+      var day = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].indexOf(groups[3].substr(0,1).toUpperCase()+groups[3].substr(1).toLowerCase());
+      return getNextXDay(date, day, nextExplicit);
+    }
+    else if(groups[4]){
+      if(groups[4] == 'next week'){
+        return getNextXDay(date, 0);
+      }
+      else if(groups[4] == 'next month'){
+        date.setMonth(date.getMonth()+1);
+        date.setDate(1);
+        return date;
+      }
+    }
+    else if(groups[6]){
+      if(groups[7] == 'day'){
+        date.setDate(date.getDate()+1);
+        return date;
+      }
+      if(groups[7] == 'week'){
+        date.setDate(date.getDate()+7);
+        return date;
+      }
+      if(groups[7] == 'month'){
+        date.setDate(date.getDate()+30);
+        return date;
+      }
+    }
+    else{
+      var quant = parseInt(groups[8]);
+      var days;
+      switch(groups[9]){
+        case "days":
+          days = quant;
+        break;
+        case "weeks":
+          days = quant * 7;
+        break;
+        case "months":
+          days = quant * 30;
+        break;
+        date.setDate(date.getDate()+days);
+        return date;
+      }
+    }
+  }
+});
+
+// ~4h time estimate
+/*
 new Case({
   regexp: /(^|\s)~(?!(?:\s|$))((?:\d?\d(?:\.\d)?h)?(?:\d?\dm)?)(\s|$)/,
   prop: 'hasTimeEstimate',
@@ -132,7 +199,7 @@ new Case({
   replaceTemplate: '${this.groups[0]}<span class=\'timeEstimate\'>~${this.groups[1]}</span>${this.groups[2]}',
   processFunc: null
 });
-
+*/
 
 /*
 new Case({
@@ -153,3 +220,27 @@ var dateRegexes = [
 dateRegexes.forEach(function(regex){
 
 });
+
+
+function getDay(date, mod){
+  if(!mod) mod = 0;
+  date.setDate(date.getDate() + mod);
+  var day = date.getDay();
+  if(day == 0) day = 6;
+  else day = day-1;
+  return day;
+}
+
+function getNextXDay(date, day, explicitNext){ //0 = monday
+  var dateDay = getDay(date);
+  var diff;
+  if(day==dateDay) diff = 7;
+  if(day<dateDay) diff = 7-(dateDay-day);
+  if(day>dateDay){
+    if(explicitNext) diff = day-dateDay+7;
+    else diff = day-dateDay;
+  }
+  var tempDate = new Date();
+  tempDate.setDate(date.getDate() + diff);
+  return tempDate;
+}

@@ -1,8 +1,33 @@
 var search = require('./search');
+var noteEvents = require('./noteEvents');
 
 function InputManager(){
 
   window.addEventListener('click', function(e){
+    var dateDiv = document.querySelector('.dateBox');
+    if(dateDiv != null){
+      if(dateDiv.contains(e.target) == false) dateDiv.parentNode.removeChild(dateDiv);
+    }
+    if(e.target.classList.contains('contentHolder')){
+      var content = e.target.querySelector('.content');
+      caret.set(content, content.innerText.length);
+    }
+    if(e.target.classList.contains('dueDate')){
+      var date = new Date(parseInt(e.target.dataset.date));
+      dateBox.drawBox(date, e.target, date);
+    }
+    if(e.target.classList.contains('changeMonth')){
+      dateBox.updateBox(new Date(parseInt(e.target.dataset.date)), e.target.parentNode.parentNode.parentNode, new Date(parseInt(e.target.parentNode.parentNode.parentNode.parentNode.dataset.date)));
+    }
+    if(e.target.classList.contains('clearDate')){
+      var noteDiv = e.target.parentNode.parentNode.parentNode.parentNode;
+      changeManager.change(noteDiv.dataset.id, [{prop:'dueDate', value:null}]);
+    }
+    if(e.target.classList.contains('dateChoice')){
+      dateBox.updateSelected(e.target);
+      var noteDiv = e.target.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode;
+      changeManager.change(noteDiv.dataset.id, [{prop:'dueDate', value:new Date(parseInt(e.target.dataset.date)).toISOString()}]);
+    }
     if(e.target.classList.contains('tag')){
       var searchInput = document.querySelector('#searchBoxHolder input');
       var tag = e.target.dataset.tag;
@@ -18,11 +43,7 @@ function InputManager(){
       document.querySelector('#holder').classList.toggle('showCompleted');
     }
     else if(e.target.classList.contains('toggle')){
-      var note = model[e.target.parentNode.parentNode.parentNode.dataset.id];
-      var makeItCollapsed = null;
-      if(note.isCollapsed) makeItCollapsed = false;
-      else makeItCollapsed = true;
-      changeManager.change(note.id, [{prop:"isCollapsed", value:makeItCollapsed}]);
+      noteEvents(e.target.parentNode.parentNode.parentNode, 'toggle', e);
     }
   });
 
@@ -40,6 +61,7 @@ function InputManager(){
   window.addEventListener('focusout', function(e){
     if(e.target != window && e.target.classList.contains('content')){
       if(throttle.id) throttle.send();
+      
     }
   });
 
@@ -49,11 +71,30 @@ function InputManager(){
   });
 
   window.addEventListener('keydown', function(e){
+    if(e.keyCode == 36 && e.ctrlKey){
+      var noteEls = Array.prototype.slice.call(document.querySelectorAll(`.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
+      noteEls[0].querySelector('.content').focus();
+    }
+    if(e.keyCode == 35 && e.ctrlKey){
+      var noteEls = Array.prototype.slice.call(document.querySelectorAll(`.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
+      var lastEl = noteEls[noteEls.length-1].querySelector('.content');
+      lastEl.focus();
+    }
+
     if(e.target.classList.contains('content')){
-      if(e.keyCode == 13 && e.ctrlKey){
-        var note = model[e.target.parentNode.parentNode.parentNode.dataset.id];
-        changeManager.change(note.id, [{prop:"isCompleteOrigin", value:(note.isCompleteOrigin ? false : true)}]);
-      }
+      var noteDiv = e.target.parentNode.parentNode.parentNode;
+      var content = noteDiv.querySelector('.content');
+      if(e.keyCode == 13 && e.ctrlKey) noteEvents(noteDiv, 'toggleComplete', e);
+      if(e.keyCode == 13 && e.ctrlKey == false) noteEvents(noteDiv, 'new', e);
+      if(e.keyCode == 38 && e.ctrlKey == false && e.shiftKey == false) noteEvents(noteDiv, 'navUp', e);
+      if(e.keyCode == 40 && e.ctrlKey == false && e.shiftKey == false) noteEvents(noteDiv, 'navDown', e);
+      if(e.keyCode == 37 && e.ctrlKey == false && e.shiftKey == false && ['start','empty'].includes(caret.pos(content))) noteEvents(noteDiv, 'navUpEnd', e);
+      if(e.keyCode == 39 && e.ctrlKey == false && e.shiftKey == false && ['end','empty'].includes(caret.pos(content))) noteEvents(noteDiv, 'navDownStart', e);
+      if(e.keyCode == 9 && e.shiftKey) noteEvents(noteDiv, 'outdent', e);
+      if(e.keyCode == 9 && e.shiftKey == false) noteEvents(noteDiv, 'indent', e);
+      if(e.keyCode == 38 && e.ctrlKey) noteEvents(noteDiv, 'repositionUp', e);
+      if(e.keyCode == 40 && e.ctrlKey) noteEvents(noteDiv, 'repositionDown', e);
+      if(e.keyCode == 8 && caret.get(e.target) == 0) noteEvents(noteDiv, 'delete', e);
     }
   });
 
@@ -105,77 +146,13 @@ function InputManager(){
 
 }
 
-function Throttle(seconds){
-  this.seconds = seconds;
-}
-
-Throttle.prototype.input = function(id, content){
-  var self = this;
-  self.clear();
-  self.id = id;
-  self.content = content;
-  self.countdown = window.setTimeout(function(){self.send();}, self.seconds * 1000);
-}
-
-Throttle.prototype.send = function(){
-  var self = this;
-  changeManager.change(self.id, [{prop:"content", value:self.content}]);
-  self.clear();
-}
-
-Throttle.prototype.clear = function(){
-  var self = this;
-  if(self.countdown) window.clearTimeout(self.countdown);
-  self.id = undefined;
-  self.content = undefined;
-}
-
-var throttle = new Throttle(1);
-
 var processText = require('./shared/processText');
 
 function processContentInputSuperficial(el){
   var pos;
-  if(el == document.activeElement) pos = getCaretPosition(el);
+  if(el == document.activeElement) pos = caret.get(el);
   el.innerHTML = processText(el.innerText);
-  if(pos && el == document.activeElement) setCaretPosition(el, pos);
+  if(pos && el == document.activeElement) caret.set(el, pos);
 }
 
 module.exports = InputManager;
-
-function getCaretPosition(el){
-  var sel = window.getSelection();
-  var range = new Range();
-  range.setStart(el, 0);
-  range.setEnd(sel.anchorNode, sel.anchorOffset);
-  return range.toString().length;
-}
-
-function setCaretPosition(el, pos){
-
-    // Loop through all child nodes
-    for(var node of el.childNodes){
-        if(node.nodeType == 3){ // we have a text node
-            if(node.length >= pos){
-                // finally add our range
-                var range = document.createRange(),
-                    sel = window.getSelection();
-                range.setStart(node,pos);
-                range.collapse(true);
-
-                sel.removeAllRanges();
-                sel.addRange(range);
-
-                return -1; // we are done
-            }else{
-                pos -= node.length;
-            }
-        }else{
-            pos = setCaretPosition(node,pos);
-            if(pos == -1){
-                return -1; // no need to finish the for loop
-            }
-        }
-    }
-    return pos; // needed because of recursion stuff
-}

@@ -2,10 +2,20 @@
 //once collected all together, they can then be applied to the DOM or written to the database
 
 function Change(id, changes, changeList){
+
   var topLevel = false;
   if(changeList === undefined){
     topLevel = true;
     var changeList = {};
+  }
+
+  var note = model[id];
+
+  //grab any old values we may need to keep hold of
+  if(topLevel){
+    var oldParent = model[note.parentId];
+    var oldPreceding = model[note.precedingId];
+    var oldNext = modelRaw.find(x=> x.precedingId == note.id);
   }
 
   //make the change to the note in the model
@@ -30,62 +40,81 @@ function Change(id, changes, changeList){
     if(change.prop == 'content') return changeList;
 
     //now (for other types of changes) deal with any subsequent changes
-    var note = model[id];
-
     switch(change.prop){
-      case 'isNoteOrigin':
-        //becoming a noteOrigin
-        if(higherInChain(note, 'isNoteOrigin')) break;
-        if(change.value == true){
-          applyToSelfAndDescendants(note, 'isNote', changeList);
-          //if we changed anything from a todo to not a todo, we must now search for new possible todos in the chain above
-          for(id in changeList){
-            if(changeList.hasOwnProperty(id)){
-              var changeItem = changeList[id];
-              if(changeItem.hasOwnProperty('isTodo') && changeItem.isTodo == false){
-                activateAncestorTodo(model[note.parentId], note, changeList);
-                break;
-              }
-            }
-          }
-        }
-        //stopping to be a noteOrigin
-        else{
-          disApplyToSelfAndDescendants(note, 'isNote', 'isNoteOrigin', changeList);
-        }
-        break;
-      case 'isNote':
-        if(change.value == true){
-          if(note.isTodo) new Change(note.id, [{prop:'isTodo', value:false}], changeList);
+      case 'isProjectAndIfSoPriority':
+        if(change.value > 0){
+          new Change(note.id, [{prop:'isTodo', value:true}], changeList);
         }
         else{
-          if(hasTodoPotentialEager(note)) new Change(note.id, [{prop:'isTodo', value:true}], changeList);
+          if(model[note.parentId].isTodo == false) new Change(note.id, [{prop:'isTodo', value:false}], changeList);
         }
       break;
-      case 'isCompleteOrigin':
-        if(higherInChain(note, 'isCompleteOrigin')) break;
-        if(change.value == true){
-          applyToSelfAndDescendants(note, 'isComplete', changeList);
-        }
-        else{
-          disApplyToSelfAndDescendants(note, 'isComplete', 'isCompleteOrigin', changeList);
+
+      case 'dueDate':
+        if(note.effectiveDueDate != change.value){
+          new Change(note.id, [{prop:'effectiveDueDate', value:change.value}], changeList);
         }
       break;
-      case 'isComplete':
-        var parentNote = model[note.parentId];
-        if(change.value == true){
-          if(hasTodoPotential(parentNote)) new Change(parentNote.id, [{prop:'isTodo', value:true}], changeList);
+
+      case 'effectiveDueDate':
+        trickleDown(note, change, x=> x.dueDate==null, changeList);
+      break;
+
+      case 'isMemo':
+        if(change.value == true && note.isProjectAndIfSoPriority == 0){
+          new Change(note.id, [{prop:'isTodo', value:false}], changeList);
         }
-        else{
-          if(note.isNote == false) new Change(note.id, [{prop:'isTodo', value:true}], changeList);
+        else if(change.value == false && model[note.parentId].isTodo == 1){
+          new Change(note.id, [{prop:'isTodo', value:true}], changeList);
         }
       break;
+
       case 'isTodo':
+        trickleDown(note, change, x=> x.isProjectAndIfSoPriority == 0 && x.isMemo == 0, changeList);
+      break;
+
+      case 'effectiveDueDate':
+        trickleDown(note, change, x=> x.dueDate == null, changeList);
+      break;
+
+      case 'dueDate':
+        new Change(note.id, [{prop:'effectiveDueDate', value:change.value}], changeList);
+      break;
+
+      case 'isComplete':
         if(change.value == true){
-          //this shouldn't happen in cases where parent should be a todo (completion of items causing multiple todos to be created)
-          console.log(note.id);
-          console.log('deactivating ancestor todos');
-          deActivateAncestorTodo(model[note.parentId], changeList);
+          new Change(note.id, [{prop:'isDescendantOfComplete', value:true}], changeList);
+        }
+        else{
+          new Change(note.id, [{prop:'isDescendantOfComplete', value:false}], changeList);
+        }
+      break;
+
+      case 'isDescendantOfComplete':
+        trickleDown(note, change, x=> x.isComplete == 0, changeList);
+      break;
+
+      case 'parentId':
+        var newParent = modelRaw.find(x=> x.id == note.parentId);
+        if(newParent){
+          if(newParent.isParent == false) new Change(newParent.id, [{prop:'isParent', value:true}], changeList);
+          if(newParent.isTodo != note.isTodo) new Change(note.id, [{prop:'isTodo', value:newParent.isTodo}], changeList);
+        }
+        //test if old parent still a parent or not and assign as appropriate
+        console.log(oldParent);
+        if(oldParent){
+          var isParent = 0;
+          if(modelRaw.filter(x=> x.parentId == oldParent.id).length) isParent = 1;
+          if(oldParent.isParent != isParent) new Change(oldParent.id, [{prop:'isParent', value:isParent}], changeList);
+        }
+      break;
+
+      case 'precedingId':
+        //any notes which followed this one should no longer do so
+        if(topLevel){
+          if(oldNext) new Change(oldNext.id, [{prop:'precedingId', value:(oldPreceding?oldPreceding.id:null)}], changeList);
+          var newNext = modelRaw.find(x => x.id != note.id && x.parentId == note.parentId && x.precedingId == note.precedingId);
+          if(newNext) new Change(newNext.id, [{prop:'precedingId', value:note.id}], changeList);
         }
       break;
 
@@ -93,63 +122,20 @@ function Change(id, changes, changeList){
   });
 
   if(topLevel){
+    console.log(changeList);
     return changeList;
   }
 }
 
 module.exports = Change;
 
-function higherInChain(origin, property){
-  var item = origin;
-  while(item = model[item.parentId]){
-    if(item[property]) return true;
-  }
-  return false;
-}
-
-function applyToSelfAndDescendants(note, prop, changeList){
-  if(note[prop]) return;
-  else{
-    new Change(note.id, [{prop:prop, value:true}], changeList);
-    modelRaw.filter(x=> x.parentId == note.id).forEach(function(child){
-      applyToSelfAndDescendants(child, prop, changeList);
-    });
-  }
-}
-
-function disApplyToSelfAndDescendants(note, prop, sourceProp, changeList){
-  if(note[sourceProp]) return;
-  else{
-    new Change(note.id, [{prop:prop, value:false}], changeList);
-    modelRaw.filter(x=> x.parentId == note.id).forEach(function(child){
-      disApplyToSelfAndDescendants(child, prop, sourceProp, changeList);
-    });
-  }
-}
-
-function activateAncestorTodo(note, ignoreChildNote, changeList){
-  if(note === undefined) return;
-  //make it so
-  if(hasTodoPotential(note)) new Change(note.id, [{prop:'isTodo', value:true}], changeList);
-  //or look further up the chain
-  else activateAncestorTodo(model[note.parentId], note, changeList);
-}
-
-function deActivateAncestorTodo(note, changeList){
-  if(note === undefined) return;
-  if(note.isTodo && hasTodoPotential(note) == false) new Change(note.id, [{prop:'isTodo', value:false}], changeList);
-  else deActivateAncestorTodo(model[note.parentId], changeList);
-}
-
-function hasTodoPotential(note){
-  if(note === undefined) return;
-  if(note.isNote) return false;
-  if(modelRaw.find(x=> x.parentId == note.id && x.isComplete == false && x.isNote == false) != undefined) return false;
-  else return true;
-}
-
-function hasTodoPotentialEager(note){
-  if(note === undefined) return;
-  if(modelRaw.find(x=> x.parentId == note.id && x.isComplete == false && x.isNoteOrigin == false) != undefined) return false;
-  else return true;
+function trickleDown(note, change, stopPropTest, changeList){
+  console.log('in the trickle down')
+  var children = modelRaw.filter(x=> x.parentId == note.id);
+  children.forEach(function(child){
+    if(child[change.prop] != change.value && stopPropTest(child)){
+      console.log('making a new change')
+      new Change(child.id, [{prop:change.prop, value:change.value}], changeList);
+    }
+  });
 }

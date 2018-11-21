@@ -5,17 +5,9 @@
 .important{
   color: red;
 }
-.isImportant>.topLine{
-  text-decoration: underline;
-  text-decoration-color: red;
-  text-decoration-style: dotted;
-}
 
-.isWorkable>.topLine{
-  color: green;
-}
 
-.isProjectPriority>.topLine{
+.isProjectAndIfSoPriority>.topLine .content{
   font-weight: bold;
 }
 
@@ -49,4 +41,22 @@ a:link, a:visited, a:active, .tag{
   background-color: #f1f1f1;
   border-radius: 4px;
   cursor: pointer;
+}
+
+.dueDate{
+  position: relative;
+  display: inline-block;
+  margin-left: .4em;
+  border-left: 3px solid pink;
+  padding-left: .4em;
+  font-size: 10px;
+  user-select: none;
+  cursor: pointer;
+}
+.dueDate[data-date="0"]{
+  display: none;
+}
+.dueDate .clearDate::after{
+  content: "\2716";
+  color: gray;
 }

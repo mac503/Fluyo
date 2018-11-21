@@ -17,10 +17,12 @@
 }
 
 .toggle{
+  background-color: white;
   position: relative;
   width: .5em;
   height: .5em;
   margin-right: .4em;
+  margin-left: .4em;
   cursor: pointer;
   visibility: hidden;
 }
@@ -148,10 +150,11 @@
 
 .content{
   outline: 0px solid transparent;
+  display: inline-block;
 }
 
 .children{
-  margin-left: 1.4em;
+  margin-left: 1.8em;
   border-left: 1px solid lightgray;
   margin-top: .3em;
   padding-left: .3em;
@@ -186,9 +189,14 @@
   visibility: visible;
 }
 
-.isCompleteOrigin>.topLine>.contentHolder>.content{
+.isComplete>.topLine>.contentHolder>.content{
   text-decoration: line-through;
 }
-.isCompleteOrigin{
+.isComplete{
   color: gray;
+  display: none;
+}
+
+.showCompleted .isComplete{
+  display: initial;
 }

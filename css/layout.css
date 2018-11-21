@@ -146,3 +146,7 @@ body[data-display='outline'] #breadcrumbs{
   padding-left: 1em;
   padding-right: 1em;
 }
+
+#holder{
+  position: relative;
+}

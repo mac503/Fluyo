@@ -1,3 +1,70 @@
+.dateBox{
+  cursor: default;
+  position: absolute;
+  bottom: 0px;
+  left: 0px;
+  user-select: none;
+  font-size: 13px;
+}
+.dateBox .shell{
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  background-color: white;
+  z-index: 1000;
+  min-width: 215px;
+  border: 1px solid black;
+  overflow: hidden;
+}
+.dateBox .monthYear{
+  border-bottom: 1px solid black;
+  width: 100%%;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.dateBox .monthYear span{
+  margin: 1px auto;
+  cursor: pointer;
+}
+.dateBox .monthYear span:hover{
+  font-weight: bold;
+}
+.dateBox .days, .dateBox .dates, .dateBox .row{
+  overflow: hidden;
+}
+.dateBox .dates{
+  padding: 1px;
+}
+.dateBox .days div, .dateBox .row div{
+  display: inline-block;
+  width: 30px;
+  text-align: center;
+  overflow: hidden;
+  padding: 2px;
+}
+.dateBox .days {
+  background-color: #C9C9C9;
+}
+.dateBox .otherMonth{
+  color: gray;
+}
+.dateBox .dates .row div{
+  cursor: pointer;
+}
+.dateBox .dates .row div:hover{
+  background-color: #96DED1;
+}
+.dateBox .dates .row .today{
+  border: 1px solid red;
+  border-radius: 10px;
+  padding: 1px;
+}
+.dateBox .dates .row .selected{
+  font-weight: bold;
+  border: 1px solid black;
+  padding: 1px;
+}
 *{
   box-sizing: border-box;
 }
@@ -146,6 +213,10 @@ body[data-display='outline'] #breadcrumbs{
   padding-left: 1em;
   padding-right: 1em;
 }
+
+#holder{
+  position: relative;
+}
 .note{
   display: block;
 }
@@ -165,10 +236,12 @@ body[data-display='outline'] #breadcrumbs{
 }
 
 .toggle{
+  background-color: white;
   position: relative;
   width: .5em;
   height: .5em;
   margin-right: .4em;
+  margin-left: .4em;
   cursor: pointer;
   visibility: hidden;
 }
@@ -296,10 +369,11 @@ body[data-display='outline'] #breadcrumbs{
 
 .content{
   outline: 0px solid transparent;
+  display: inline-block;
 }
 
 .children{
-  margin-left: 1.4em;
+  margin-left: 1.8em;
   border-left: 1px solid lightgray;
   margin-top: .3em;
   padding-left: .3em;
@@ -334,11 +408,16 @@ body[data-display='outline'] #breadcrumbs{
   visibility: visible;
 }
 
-.isCompleteOrigin>.topLine>.contentHolder>.content{
+.isComplete>.topLine>.contentHolder>.content{
   text-decoration: line-through;
 }
-.isCompleteOrigin{
+.isComplete{
   color: gray;
+  display: none;
+}
+
+.showCompleted .isComplete{
+  display: initial;
 }
 /*
 useful for something else
@@ -375,17 +454,9 @@ useful for something else
 .important{
   color: red;
 }
-.isImportant>.topLine{
-  text-decoration: underline;
-  text-decoration-color: red;
-  text-decoration-style: dotted;
-}
 
-.isWorkable>.topLine{
-  color: green;
-}
 
-.isProjectPriority>.topLine{
+.isProjectAndIfSoPriority>.topLine .content{
   font-weight: bold;
 }
 
@@ -419,4 +490,22 @@ a:link, a:visited, a:active, .tag{
   background-color: #f1f1f1;
   border-radius: 4px;
   cursor: pointer;
+}
+
+.dueDate{
+  position: relative;
+  display: inline-block;
+  margin-left: .4em;
+  border-left: 3px solid pink;
+  padding-left: .4em;
+  font-size: 10px;
+  user-select: none;
+  cursor: pointer;
+}
+.dueDate[data-date="0"]{
+  display: none;
+}
+.dueDate .clearDate::after{
+  content: "\2716";
+  color: gray;
 }

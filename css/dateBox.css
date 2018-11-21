@@ -1,0 +1,67 @@
+.dateBox{
+  cursor: default;
+  position: absolute;
+  bottom: 0px;
+  left: 0px;
+  user-select: none;
+  font-size: 13px;
+}
+.dateBox .shell{
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  background-color: white;
+  z-index: 1000;
+  min-width: 215px;
+  border: 1px solid black;
+  overflow: hidden;
+}
+.dateBox .monthYear{
+  border-bottom: 1px solid black;
+  width: 100%%;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.dateBox .monthYear span{
+  margin: 1px auto;
+  cursor: pointer;
+}
+.dateBox .monthYear span:hover{
+  font-weight: bold;
+}
+.dateBox .days, .dateBox .dates, .dateBox .row{
+  overflow: hidden;
+}
+.dateBox .dates{
+  padding: 1px;
+}
+.dateBox .days div, .dateBox .row div{
+  display: inline-block;
+  width: 30px;
+  text-align: center;
+  overflow: hidden;
+  padding: 2px;
+}
+.dateBox .days {
+  background-color: #C9C9C9;
+}
+.dateBox .otherMonth{
+  color: gray;
+}
+.dateBox .dates .row div{
+  cursor: pointer;
+}
+.dateBox .dates .row div:hover{
+  background-color: #96DED1;
+}
+.dateBox .dates .row .today{
+  border: 1px solid red;
+  border-radius: 10px;
+  padding: 1px;
+}
+.dateBox .dates .row .selected{
+  font-weight: bold;
+  border: 1px solid black;
+  padding: 1px;
+}
