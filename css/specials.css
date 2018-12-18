@@ -2,10 +2,16 @@
   color: grey;
 }
 
-.important{
+.isImportant::after{
+  display: block;
+  position: absolute;
+  top: .3em;
+  right: 39vw;
+  text-align: right;
   color: red;
+  content: "!";
+  font-weight: bold;
 }
-
 
 .isProjectAndIfSoPriority>.topLine .content{
   font-weight: bold;
@@ -26,7 +32,8 @@
 }
 
 .timeEstimate{
-  background-color: pink;
+  background-color: #FFE9EC;
+  font-style: italic;
 }
 
 a:link, a:visited, a:active, .tag{
@@ -34,7 +41,7 @@ a:link, a:visited, a:active, .tag{
   text-decoration: underline;
   text-decoration-color: lightgray;
 }
-.tag{
+a.tag{
   text-decoration: none;
 }
 .tag:hover{

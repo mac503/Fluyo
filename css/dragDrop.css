@@ -1,0 +1,40 @@
+.bullet{
+  z-index: 100;
+}
+.dragDropTop{
+  width: 95%;
+  height: 50%;
+  position: absolute;
+  display: none;
+  z-index: 51;
+}
+.dragDropTop.hover{
+  border-top: 2px solid #96DED1;
+}
+.dragDropBottom{
+  width: 95%;
+  height: 50%;
+  top: 50%;
+  position: absolute;
+  display: none;
+  z-index: 50;
+  background-color: transparent;
+}
+.dragDropBottom.hover{
+  border-bottom: 2px solid #96DED1;
+}
+.dragDropHappening .dragDropTop, .dragDropHappening .dragDropBottom{
+  display: block;
+}
+
+.bullet.hover::before{
+  content: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#96DED1" /></svg>');
+  visibility: visible;
+}
+
+.dragOrigin{
+  background-color: #F5F5F5;
+}
+.dragDropHappening .dragOrigin + .note>.topLine>.contentHolder>.dragDropTop, .dragDropHappening .dragDropOrigin + .note>.topLine>.contentHolder>.dragDropBottom{
+  display: none;
+}

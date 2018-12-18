@@ -107,13 +107,17 @@ div, input{
   padding: 3em;
   padding-top: 8em;
   margin-bottom: 14em;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  align-content: space-around;
 }
 
 #content>div{
   display:none;
 }
 
-body[data-display='inbox'] #inbox{
+body[data-display='inbox'] #inbox, body[data-display='inbox'] #outline{
   display: block;
 }
 body[data-display='outline'] #outline{
@@ -124,15 +128,36 @@ body[data-display='todo'] #todo{
 }
 
 #outline, #inbox, #todo{
-  width: 40%;
-  margin: auto;
   position: relative;
+}
+
+#outline{
+  width: 40%;
+}
+
+#todo{
+  width: 100%;
+  display: flex;
+  position: relative;
+}
+#schedule, #cascade{
+  display: inline-block;
+}
+#cascade{
+  width: 50%;
+  min-height: 60%;
+  display: inline-block;
+}
+#schedule{
+  position: absolute;
+  width: 49%;
+  display: inline-block;
 }
 
 #breadcrumbs{
   display: none;
 }
-body[data-display='outline'] #breadcrumbs{
+body.zooming #breadcrumbs{
   display: inline-block;
 }
 #breadcrumbs span{

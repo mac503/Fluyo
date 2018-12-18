@@ -7,7 +7,8 @@ module.exports = function(date){
   var diff = Math.floor((date - today) / fac);
   if(diff == 0) return 'today';
   else if(diff == 1) return 'tomorrow';
-  else if(diff < 0){
+  else if(diff == -1) return 'yesterday';
+  else if(diff < -1){
     if(diff > -14){
       return -diff+' days ago';
     }

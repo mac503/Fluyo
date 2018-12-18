@@ -1,7 +1,6 @@
-browser = true;
-
 ajax = require('./modules/ajax');
-var InputManager = require('./modules/InputManager');
+require('./modules/InputManager');
+require('./modules/dragDrop');
 processText = require('./modules/shared/processText');
 caret = require('./modules/caret')
 throttle = require('./modules/throttle')
@@ -16,13 +15,13 @@ model = {};
 
 console.log(model);
 
-var inputManager = new InputManager();
 changeManager = require('./modules/ChangeManager');
 
 holdingPen = document.createElement('div');
 
 ajax.get(function(data){
   var notesDiv = document.querySelector('#notes');
+  var inboxDiv = document.querySelector('#inbox');
   modelRaw = data;
   modelRaw.forEach(function(note){
     model[note.id] = note;
@@ -30,6 +29,10 @@ ajax.get(function(data){
   orderNotes(modelRaw.filter(x => x.parentId == null)).forEach(function(note){
     drawNote(note, notesDiv);
   });
+  orderNotes(modelRaw.filter(x => x.parentId == 'INBOX')).forEach(function(note){
+    drawNote(note, inboxDiv);
+  });
+  populateSchedule();
   window.dispatchEvent(new HashChangeEvent("hashchange"));
 });
 
@@ -68,10 +71,10 @@ createNoteDiv = function(note){
     <div class='topLine'>
       <div class='left'>
         <div class='toggle'></div>
-        <div class='bullet'></div>
+        <div class='bullet' draggable='true'></div>
       </div>
       <div class='contentHolder'><div class='dragDropTop'></div><div class='dragDropBottom'></div>
-        <div class='content' contenteditable>${processText(note.content)}</div>
+        <div class='content' contenteditable>${processText('blur', note.content, note.id)}</div>
         <div class='dueDate' data-date='${new Date(note.dueDate).getTime()}'>due ${friendlyDate(new Date(note.dueDate))} <span class='clearDate'></div>
       </div>
     </div>
@@ -79,4 +82,16 @@ createNoteDiv = function(note){
   `;
   div.querySelector('.bullet').dataset.hashTarget = '/'+note.id;
   return div;
+}
+
+populateSchedule = function(){
+  var today = new Date();
+  today.setHours(0,0,0,0);
+  date = today.getDate();
+  workingDate = new Date(today.getTime());
+  document.querySelector('#tabs').innerHTML = `
+    ${Array(7).fill().map((x,i)=> `
+      <div class='tab' data-date='${workingDate.setDate(date+i)}'><input type="radio" id="tab-${i}" name="tabs" ${i==0 ? 'checked' : ''}><label for="tab-${i}" data-hash-target='/${workingDate.setDate(date+i)}'>${i==0 ? `Today` : i==1 ? 'Tomorrow' : ['Sun','Mon','Tues','Wednes','Thurs','Fri','Satur','Sun'][new Date(workingDate.setDate(date+i)).getDay()]+'day'}</label><div class='content'></div></div>
+    `).join('')}
+  `;
 }

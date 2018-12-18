@@ -5,6 +5,7 @@ module.exports = {
 }
 
 function get(el){
+  if(el != document.activeElement) return null;
   var sel = window.getSelection();
   var range = new Range();
   range.setStart(el, 0);
@@ -14,6 +15,7 @@ function get(el){
 
 function set(el, pos){
 
+  if(pos == null) return;
     // Loop through all child nodes
     for(var node of el.childNodes){
         if(node.nodeType == 3){ // we have a text node

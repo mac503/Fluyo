@@ -8,12 +8,13 @@
 }
 .dateBox .shell{
   position: absolute;
-  top: 0px;
+  top: 1em;
   left: 0px;
   background-color: white;
   z-index: 1000;
   min-width: 215px;
   border: 1px solid black;
+  border-radius: 3px;
   overflow: hidden;
 }
 .dateBox .monthYear{
@@ -44,7 +45,7 @@
   padding: 2px;
 }
 .dateBox .days {
-  background-color: #C9C9C9;
+  background-color: #E9E9E9;
 }
 .dateBox .otherMonth{
   color: gray;

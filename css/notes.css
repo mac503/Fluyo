@@ -1,5 +1,6 @@
 .note{
   display: block;
+  position: relative;
 }
 
 .topLine{
@@ -7,10 +8,20 @@
   flex-direction: row;
   justify-content: flex-start;
   align-items: top;
+  padding-top: .3em;
+  padding-bottom: .4em;
+}
+
+.note:first-child>.topLine{
+  padding-top: .3em;
+}
+.note.isParent:not(.isCollapsed)>.topLine, .note:last-child>.topLine{
+  padding-bottom: .3em;
 }
 
 .left{
   padding-top: 3px;
+  padding-left: .1em;
   display: flex;
   align-items: center;
   height: 1em;
@@ -19,28 +30,26 @@
 .toggle{
   background-color: white;
   position: relative;
-  width: .5em;
-  height: .5em;
+  width: 1em;
+  height: 1em;
   margin-right: .4em;
-  margin-left: .4em;
+  margin-left: .1em;
   cursor: pointer;
   visibility: hidden;
 }
-.isParent>.topLine:hover .toggle{
+.isParent:not(.isCollapsed)>.topLine:hover .toggle::before{
+  content: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M 20 50 H 80" fill="transparent" stroke="darkgray" stroke-width="12" stroke-linecap="round"/></svg>');
   visibility: visible;
 }
-.toggle::before, .toggle::after{
-  content: "";
+.toggle::before{
   display: block;
   position: absolute;
-  top: 38%;
-  height: 24%;
+  height: 100%;
   width: 100%;
-  border-radius: 15%;
-  background-color: black;
 }
-.isCollapsed>.topLine .toggle::after{
-  transform: rotate(90deg);
+.isParent.isCollapsed>.topLine:hover .toggle::before{
+  content: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M 20 50 H 80 M 50 80 V 20" fill="transparent" stroke="darkgray" stroke-width="12" stroke-linecap="round"/></svg>');
+  visibility: visible;
 }
 
 .isCollapsed>.children{
@@ -50,114 +59,66 @@
 .bullet{
   display: block;
   position: relative;
-  height: 1em;
   width: 1em;
+  height: 1em;
   cursor: pointer;
 }
+/**/
 .bullet::before{
   display: block;
-  position: relative;
-  top: -12.5%;
-  left: -12.5%;
-  width: 125%;
-  height: 125%;
-  z-index: -1;
-  border-radius: 100%;
-  content: "";
-  background-color: lightgray;
+  position: absolute;
+  top: -20%;
+  left: -20%;
+  width: 140%;
+  height: 140%;
+  content: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="lightgray" /></svg>');
   visibility: hidden;
 }
 .isParent.isCollapsed>.topLine .bullet::before{
   visibility: visible;
 }
 .bullet:hover::before{
+  top: -20%;
+  left: -20%;
+  width: 140%;
+  height: 140%;
   visibility: visible;
-  background-color: darkgray;
+  position: absolute;
+  content: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="darkgray" /></svg>');
 }
 
-:not(.isTodo)>.topLine .bullet::after, .note>.topLine .bullet:hover::after{
-  position: absolute;
-  top: 25%;
-  left: 25%;
-  width: 50%;
-  height: 50%;
-  border-radius: 100%;
-  background-color: gray;
-  background-image: none;
-  content: "";
+.note>.topLine .bullet::after, .note>.topLine .bullet:hover::after{
+  position: relative;
+  top: -20%;
+  left: -20%;
+  height: 140%;
+  width: 140%;
+  content: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="20" fill="gray" /></svg>');
   display: block;
 }
 .isTodo>.topLine .bullet::after{
-  position: absolute;
-  top: calc(25% - 1px);
-  left: calc(25% - 1px);
-  width: 50%;
-  height: 50%;
-  border: 1px solid gray;
-  border-radius: 15%;
-  background-color: white;
-  content: "";
-  display: block;
+  content: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="25" y="25" width="50" height="50" rx="10" ry="10" stroke="black" fill="white" stroke-width = "2" /></svg>');
 }
 .isTodo.isComplete>.topLine .bullet::after{
-
-}
-.isNote>.topLine .bullet::after{
-  top: 20%;
-  left: 27.5%;
-  width: 45%;
-  height: 60%;
-  border-radius: 0;
-  background-image: linear-gradient(gray, gray 20%, white 20%, white 40%, gray 40%, gray 60%, white 60%, white 80%, gray 80%, gray 100%);
-}
-.isNote>.topLine .bullet:hover::after{
-  left: calc(27.5% - 1px);
-  border-left: 1px solid gray;
-  border-right: 1px solid gray;
+  content: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect x="25" y="25" width="50" height="50" rx="10" ry="10" stroke="black" stroke-width = "2" fill="none" /><path d="m 35 50 l 15 15 l 20 -40" stroke="darkgray" stroke-width = "12" stroke-linecap="round" fill = "none" /></svg>');
 }
 
 .contentHolder{
-  position: relative;
   margin-left: .4em;
   width: 100%;
 }
-.dragDropTop{
-  width: 100%;
-  height: 50%;
-  position: absolute;
-  display: block;
-  z-index: 50;
-  background-color: transparent;
-}
-.dragDropTop:hover{
-  border-top: 2px solid blue;
-}
-.dragDropBottom{
-  width: 100%;
-  height: 50%;
-  top: 50%;
-  position: absolute;
-  display: block;
-  z-index: 50;
-  background-color: transparent;
-}
-.dragDropBottom:hover{
-  border-bottom: 2px solid blue;
-}
-:not(.dragDropHappening) .dragDropTop, :not(.dragDropHappening) .dragDropBottom{
-  display: none;
-}
+
 
 .content{
   outline: 0px solid transparent;
   display: inline-block;
+  padding-left: 1px;
 }
 
 .children{
-  margin-left: 1.8em;
-  border-left: 1px solid lightgray;
-  margin-top: .3em;
-  padding-left: .3em;
+  margin-left: 2em;
+  border-left: 1px solid #E9E9E9;
+  padding-left: .2em;
 }
 
 .zoom>.topLine>.left{
@@ -173,9 +134,11 @@
   margin-top: 1em;
   padding-left: 0;
 }
-.zooming .note:not(.zoom){
+.zooming #outline .note:not(.zoom){
   pointer-events: none;
   visibility: hidden;
+  width: 100%;
+  position: initial;
 }
 .zoom{
   position: absolute;
@@ -184,7 +147,7 @@
   pointer-events: all;
   visibility: visible;
 }
-.zooming .zoom .note{
+.zooming #outline .zoom .note{
   pointer-events: all;
   visibility: visible;
 }
@@ -193,7 +156,7 @@
   text-decoration: line-through;
 }
 .isComplete{
-  color: gray;
+  color: lightgray;
   display: none;
 }
 

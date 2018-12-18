@@ -1,0 +1,73 @@
+#schedule{
+  height: 100%;
+}
+
+#tabs{
+  position: relative;
+  height: 100%;
+  margin-right: 5%;
+}
+
+.tab{
+  display: inline-block;
+  border: 1px solid gray;
+  height: 1.5em;
+  float: left;
+}
+.tab:not(:first-of-type){
+  border-left: 0px;
+}
+.tab:first-of-type{
+  border-top-left-radius: 4px;
+}
+.tab:first-of-type label{
+  border-top-left-radius: 4px;
+}
+.tab:last-of-type{
+  border-top-right-radius: 4px;
+}
+.tab:last-of-type label{
+  border-top-right-radius: 4px;
+}
+.tab label{
+  position: relative;
+  padding-left: 10px;
+  padding-right: 10px;
+  z-index: 2;
+  user-select: none;
+  cursor: pointer;
+}
+.tab [type=radio] {
+  display: none;
+}
+#tabs .content {
+  position: absolute;
+  border: 1px solid gray;
+  border-top-right-radius: 4px;
+  border-bottom-right-radius: 4px;
+  border-bottom-left-radius: 4px;
+  top: 1.5em;
+  margin-top: -1px;
+  left: 0;
+  background: white;
+  width: 100%;
+  padding: 10px;
+  opacity: 0;
+  min-height: 100%;
+}
+
+[type=radio]:checked ~ label {
+  margin-top: -2px;
+  background: white;
+  padding-top: 1px;
+  border-top: 1px solid gray;
+  border-bottom: 1px solid white;
+  padding-bottom:2px;
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  z-index: 2;
+}
+#tabs [type=radio]:checked ~ label ~ .content {
+  z-index: 1;
+  opacity: 1;
+}

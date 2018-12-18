@@ -1,8 +1,7 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
-browser = true;
-
 ajax = require('./modules/ajax');
-var InputManager = require('./modules/InputManager');
+require('./modules/InputManager');
+require('./modules/dragDrop');
 processText = require('./modules/shared/processText');
 caret = require('./modules/caret')
 throttle = require('./modules/throttle')
@@ -17,13 +16,13 @@ model = {};
 
 console.log(model);
 
-var inputManager = new InputManager();
 changeManager = require('./modules/ChangeManager');
 
 holdingPen = document.createElement('div');
 
 ajax.get(function(data){
   var notesDiv = document.querySelector('#notes');
+  var inboxDiv = document.querySelector('#inbox');
   modelRaw = data;
   modelRaw.forEach(function(note){
     model[note.id] = note;
@@ -31,6 +30,10 @@ ajax.get(function(data){
   orderNotes(modelRaw.filter(x => x.parentId == null)).forEach(function(note){
     drawNote(note, notesDiv);
   });
+  orderNotes(modelRaw.filter(x => x.parentId == 'INBOX')).forEach(function(note){
+    drawNote(note, inboxDiv);
+  });
+  populateSchedule();
   window.dispatchEvent(new HashChangeEvent("hashchange"));
 });
 
@@ -69,10 +72,10 @@ createNoteDiv = function(note){
     <div class='topLine'>
       <div class='left'>
         <div class='toggle'></div>
-        <div class='bullet'></div>
+        <div class='bullet' draggable='true'></div>
       </div>
       <div class='contentHolder'><div class='dragDropTop'></div><div class='dragDropBottom'></div>
-        <div class='content' contenteditable>${processText(note.content)}</div>
+        <div class='content' contenteditable>${processText('blur', note.content, note.id)}</div>
         <div class='dueDate' data-date='${new Date(note.dueDate).getTime()}'>due ${friendlyDate(new Date(note.dueDate))} <span class='clearDate'></div>
       </div>
     </div>
@@ -82,7 +85,19 @@ createNoteDiv = function(note){
   return div;
 }
 
-},{"./modules/ChangeManager":2,"./modules/InputManager":3,"./modules/ajax":4,"./modules/caret":5,"./modules/dateBox":6,"./modules/friendlyDate":7,"./modules/shared/processText":11,"./modules/throttle":12}],2:[function(require,module,exports){
+populateSchedule = function(){
+  var today = new Date();
+  today.setHours(0,0,0,0);
+  date = today.getDate();
+  workingDate = new Date(today.getTime());
+  document.querySelector('#tabs').innerHTML = `
+    ${Array(7).fill().map((x,i)=> `
+      <div class='tab' data-date='${workingDate.setDate(date+i)}'><input type="radio" id="tab-${i}" name="tabs" ${i==0 ? 'checked' : ''}><label for="tab-${i}" data-hash-target='/${workingDate.setDate(date+i)}'>${i==0 ? `Today` : i==1 ? 'Tomorrow' : ['Sun','Mon','Tues','Wednes','Thurs','Fri','Satur','Sun'][new Date(workingDate.setDate(date+i)).getDay()]+'day'}</label><div class='content'></div></div>
+    `).join('')}
+  `;
+}
+
+},{"./modules/ChangeManager":2,"./modules/InputManager":3,"./modules/ajax":4,"./modules/caret":5,"./modules/dateBox":6,"./modules/dragDrop":7,"./modules/friendlyDate":8,"./modules/shared/processText":12,"./modules/throttle":13}],2:[function(require,module,exports){
 var Change = require('./shared/Change');
 
 function ChangeManager(){
@@ -137,9 +152,9 @@ function drawUpdates(updates){
       console.log(id);
       var content = div.querySelector('.content');
       var caretPos = caret.get(content);
-
       var parentDiv = document.querySelector(`.note[data-id="${update.parentId}"] .children`);
       if(update.parentId == null) parentDiv = document.querySelector('#notes');
+      if(update.parentId == 'INBOX') parentDiv = document.querySelector('#inbox');
       if(update.parentId == 'deleted') parentDiv = holdingPen;
       console.log(parentDiv);
       var precedingDiv = document.querySelector(`.note[data-id="${update.precedingId}"]`);
@@ -174,167 +189,195 @@ function drawUpdates(updates){
   });
 }
 
-},{"./shared/Change":10}],3:[function(require,module,exports){
+},{"./shared/Change":11}],3:[function(require,module,exports){
 var search = require('./search');
 var noteEvents = require('./noteEvents');
-
-function InputManager(){
-
-  window.addEventListener('click', function(e){
-    var dateDiv = document.querySelector('.dateBox');
-    if(dateDiv != null){
-      if(dateDiv.contains(e.target) == false) dateDiv.parentNode.removeChild(dateDiv);
-    }
-    if(e.target.classList.contains('contentHolder')){
-      var content = e.target.querySelector('.content');
-      caret.set(content, content.innerText.length);
-    }
-    if(e.target.classList.contains('dueDate')){
-      var date = new Date(parseInt(e.target.dataset.date));
-      dateBox.drawBox(date, e.target, date);
-    }
-    if(e.target.classList.contains('changeMonth')){
-      dateBox.updateBox(new Date(parseInt(e.target.dataset.date)), e.target.parentNode.parentNode.parentNode, new Date(parseInt(e.target.parentNode.parentNode.parentNode.parentNode.dataset.date)));
-    }
-    if(e.target.classList.contains('clearDate')){
-      var noteDiv = e.target.parentNode.parentNode.parentNode.parentNode;
-      changeManager.change(noteDiv.dataset.id, [{prop:'dueDate', value:null}]);
-    }
-    if(e.target.classList.contains('dateChoice')){
-      dateBox.updateSelected(e.target);
-      var noteDiv = e.target.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode;
-      changeManager.change(noteDiv.dataset.id, [{prop:'dueDate', value:new Date(parseInt(e.target.dataset.date)).toISOString()}]);
-    }
-    if(e.target.classList.contains('tag')){
-      var searchInput = document.querySelector('#searchBoxHolder input');
-      var tag = e.target.dataset.tag;
-      if(searchInput.value.includes(tag)) searchInput.value = searchInput.value.replace(tag, '');
-      else searchInput.value = searchInput.value.trim() + ' '+tag;
-      search.apply();
-      document.querySelector('#searchBoxHolder input').focus();
-    }
-    if(e.target.dataset.hasOwnProperty('hashTarget')){
-      window.location.href = '#'+e.target.dataset.hashTarget;
-    }
-    else if(e.target == document.querySelector('#toggleCompleted')){
-      document.querySelector('#holder').classList.toggle('showCompleted');
-    }
-    else if(e.target.classList.contains('toggle')){
-      noteEvents(e.target.parentNode.parentNode.parentNode, 'toggle', e);
-    }
-  });
-
-  window.addEventListener('input', function(e){
-    if(e.target.classList.contains('content')){
-      if(document.querySelector('#searchBoxHolder input').value.trim() != '') search.apply();
-      processContentInputSuperficial(e.target);
-      throttle.input(e.target.parentNode.parentNode.parentNode.dataset.id, e.target.innerText);
-    }
-    else if(e.target.parentNode.id == 'searchBoxHolder'){
-      search.apply();
-    }
-  });
-
-  window.addEventListener('focusout', function(e){
-    if(e.target != window && e.target.classList.contains('content')){
-      if(throttle.id) throttle.send();
-      
-    }
-  });
-
-  window.addEventListener('beforeunload', function(e){
-    if(throttle.content === undefined) return "Do you want to leave this site?\n\nChanges that you made may not be saved.";
-    else return null;
-  });
-
-  window.addEventListener('keydown', function(e){
-    if(e.keyCode == 36 && e.ctrlKey){
-      var noteEls = Array.prototype.slice.call(document.querySelectorAll(`.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
-      noteEls[0].querySelector('.content').focus();
-    }
-    if(e.keyCode == 35 && e.ctrlKey){
-      var noteEls = Array.prototype.slice.call(document.querySelectorAll(`.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
-      var lastEl = noteEls[noteEls.length-1].querySelector('.content');
-      lastEl.focus();
-    }
-
-    if(e.target.classList.contains('content')){
-      var noteDiv = e.target.parentNode.parentNode.parentNode;
-      var content = noteDiv.querySelector('.content');
-      if(e.keyCode == 13 && e.ctrlKey) noteEvents(noteDiv, 'toggleComplete', e);
-      if(e.keyCode == 13 && e.ctrlKey == false) noteEvents(noteDiv, 'new', e);
-      if(e.keyCode == 38 && e.ctrlKey == false && e.shiftKey == false) noteEvents(noteDiv, 'navUp', e);
-      if(e.keyCode == 40 && e.ctrlKey == false && e.shiftKey == false) noteEvents(noteDiv, 'navDown', e);
-      if(e.keyCode == 37 && e.ctrlKey == false && e.shiftKey == false && ['start','empty'].includes(caret.pos(content))) noteEvents(noteDiv, 'navUpEnd', e);
-      if(e.keyCode == 39 && e.ctrlKey == false && e.shiftKey == false && ['end','empty'].includes(caret.pos(content))) noteEvents(noteDiv, 'navDownStart', e);
-      if(e.keyCode == 9 && e.shiftKey) noteEvents(noteDiv, 'outdent', e);
-      if(e.keyCode == 9 && e.shiftKey == false) noteEvents(noteDiv, 'indent', e);
-      if(e.keyCode == 38 && e.ctrlKey) noteEvents(noteDiv, 'repositionUp', e);
-      if(e.keyCode == 40 && e.ctrlKey) noteEvents(noteDiv, 'repositionDown', e);
-      if(e.keyCode == 8 && caret.get(e.target) == 0) noteEvents(noteDiv, 'delete', e);
-    }
-  });
-
-  window.addEventListener('keypress', function(e){
-
-  });
-
-  window.addEventListener('hashchange', function(e){
-    if(location.hash.substr(1,1) == '/'){
-      document.querySelector('#breadcrumbs').innerHTML = '';
-      if(document.querySelector('.zoom')) document.querySelector('.zoom').classList.remove('zoom');
-      document.querySelector('body').dataset.display = 'outline';
-      var id = location.hash.substr(2);
-      if(model[id]){
-        document.querySelector('body').classList.add('zooming');
-        document.querySelector(`.note[data-id="${id}"]`).classList.add('zoom');
-        document.querySelector('#outlineIcon').dataset.hashTarget = '/'+id;
-        //add breadcrumbs
-        var crumb = model[id];
-        do{
-          var span = document.createElement('span');
-          if(crumb.content.length > 30) span.innerHTML = crumb.content.substr(0, 30).trim()+' ...';
-          else span.innerHTML = crumb.content;
-          span.dataset.hashTarget = '/'+crumb.id;
-          document.querySelector('#breadcrumbs').prepend(span);
-          crumb = modelRaw.find(x => x.id == crumb.parentId);
-        } while(crumb);
-      }
-    }
-    else if(location.hash == ''){
-      document.querySelector('#breadcrumbs').innerHTML = '';
-      document.querySelector('body').dataset.display = 'outline';
-      document.querySelector('body').classList.remove('zooming');
-      if(document.querySelector('.zoom')) document.querySelector('.zoom').classList.remove('zoom');
-      document.querySelector('#outlineIcon').dataset.hashTarget = '';
-    }
-    else{
-      switch(location.hash.substr(1)){
-        case "inbox":
-            document.querySelector('body').dataset.display = 'inbox';
-        break;
-        case "todo":
-            document.querySelector('body').dataset.display = 'todo';
-        break;
-      }
-    }
-
-  });
-
-}
-
 var processText = require('./shared/processText');
 
-function processContentInputSuperficial(el){
+window.addEventListener('click', function(e){
+  var dateDiv = document.querySelector('.dateBox');
+  if(dateDiv != null){
+    if(dateDiv.contains(e.target) == false) dateDiv.parentNode.removeChild(dateDiv);
+  }
+  if(e.target.classList.contains('contentHolder')){
+    var content = e.target.querySelector('.content');
+    content.focus();
+    caret.set(content, content.innerText.length);
+  }
+  if(e.target.classList.contains('dueDate')){
+    var date = new Date(parseInt(e.target.dataset.date));
+    dateBox.drawBox(date, e.target, date);
+  }
+  if(e.target.classList.contains('changeMonth')){
+    dateBox.updateBox(new Date(parseInt(e.target.dataset.date)), e.target.parentNode.parentNode.parentNode, new Date(parseInt(e.target.parentNode.parentNode.parentNode.parentNode.dataset.date)));
+  }
+  if(e.target.classList.contains('clearDate')){
+    var noteDiv = e.target.parentNode.parentNode.parentNode.parentNode;
+    changeManager.change(noteDiv.dataset.id, [{prop:'dueDate', value:null}]);
+  }
+  if(e.target.classList.contains('dateChoice')){
+    dateBox.updateSelected(e.target);
+    var noteDiv = e.target.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode;
+    changeManager.change(noteDiv.dataset.id, [{prop:'dueDate', value:new Date(parseInt(e.target.dataset.date)).toISOString()}]);
+  }
+  if(e.target.dataset.hasOwnProperty('hashTarget')){
+    //clicks to zoom from within the inbox are excluded, they are not supposed to work
+    if(document.querySelector('#inbox').contains(e.target) == false){
+      if(window.location.href.includes('#inbox') && e.target.parentNode.id != 'topbar') window.location.href = '#inbox'+e.target.dataset.hashTarget;
+      else if(window.location.href.includes('#todo') && e.target.parentNode.id != 'topbar' && e.target.dataset.hashTarget != '') window.location.href = '#todo'+e.target.dataset.hashTarget;
+      else window.location.href = '#'+e.target.dataset.hashTarget;
+    }
+  }
+  else if(e.target == document.querySelector('#toggleCompleted')){
+    document.querySelector('#holder').classList.toggle('showCompleted');
+  }
+  else if(e.target.classList.contains('toggle')){
+    noteEvents(e.target.parentNode.parentNode.parentNode, 'toggle', e);
+  }
+});
+
+window.addEventListener('click', function(e){
+  if(e.target.classList.contains('tag')){
+    e.preventDefault();
+    e.stopPropagation();
+    var searchInput = document.querySelector('#searchBoxHolder input');
+    var tag = e.target.dataset.tag;
+    if(searchInput.value.includes(tag)) searchInput.value = searchInput.value.replace(tag, '');
+    else searchInput.value = searchInput.value.trim() + ' '+tag;
+    search.apply();
+    document.querySelector('#searchBoxHolder input').focus();
+  }
+}, true);
+
+window.addEventListener('input', function(e){
+  if(e.target.classList.contains('content')){
+    if(document.querySelector('#searchBoxHolder input').value.trim() != '') search.apply();
+    processContentInputSnap(e.target);
+    throttle.input(e.target.parentNode.parentNode.parentNode.dataset.id, e.target.innerText);
+  }
+  else if(e.target.parentNode.id == 'searchBoxHolder'){
+    search.apply();
+  }
+});
+
+window.addEventListener('focusin', function(e){
+  if(e.target.classList.contains('content')){
+    //TODO get the location of the caret and maintain it
+    e.target.innerHTML = model[e.target.parentNode.parentNode.parentNode.dataset.id].content;
+  }
+}, true);
+
+window.addEventListener('focusout', function(e){
+  if(e.target != window && e.target.classList.contains('content')){
+    if(throttle.id) throttle.send();
+    e.target.innerHTML = processText('blur', e.target.innerText, e.target.parentNode.parentNode.parentNode.dataset.id);
+  }
+});
+
+window.addEventListener('beforeunload', function(e){
+  if(throttle.content === undefined) return "Do you want to leave this site?\n\nChanges that you made may not be saved.";
+  else return null;
+});
+
+window.addEventListener('keydown', function(e){
+  if(e.keyCode == 36 && e.ctrlKey){
+    var noteEls = Array.prototype.slice.call(document.querySelectorAll(`.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
+    noteEls[0].querySelector('.content').focus();
+  }
+  if(e.keyCode == 35 && e.ctrlKey){
+    var noteEls = Array.prototype.slice.call(document.querySelectorAll(`.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
+    var lastEl = noteEls[noteEls.length-1].querySelector('.content');
+    lastEl.focus();
+  }
+
+  if(e.target.classList.contains('content')){
+    var noteDiv = e.target.parentNode.parentNode.parentNode;
+    var content = noteDiv.querySelector('.content');
+    if(e.keyCode == 13 && e.ctrlKey) noteEvents(noteDiv, 'toggleComplete', e);
+    if(e.keyCode == 38 && e.ctrlKey == false && e.shiftKey == false) noteEvents(noteDiv, 'navUp', e);
+    if(e.keyCode == 40 && e.ctrlKey == false && e.shiftKey == false) noteEvents(noteDiv, 'navDown', e);
+    if(e.keyCode == 37 && e.ctrlKey == false && e.shiftKey == false && ['start','empty'].includes(caret.pos(content))) noteEvents(noteDiv, 'navUpEnd', e);
+    if(e.keyCode == 39 && e.ctrlKey == false && e.shiftKey == false && ['end','empty'].includes(caret.pos(content))) noteEvents(noteDiv, 'navDownStart', e);
+    if(e.keyCode == 8 && caret.get(e.target) == 0 && window.getSelection().toString() == '') noteEvents(noteDiv, 'delete', e);
+    if(e.keyCode == 13 && e.ctrlKey == false) noteEvents(noteDiv, 'new', e);
+    if(e.keyCode == 9 && e.shiftKey) noteEvents(noteDiv, 'outdent', e);
+    if(e.keyCode == 9 && e.shiftKey == false) noteEvents(noteDiv, 'indent', e);
+    if(e.keyCode == 38 && e.ctrlKey) noteEvents(noteDiv, 'repositionUp', e);
+    if(e.keyCode == 40 && e.ctrlKey) noteEvents(noteDiv, 'repositionDown', e);
+  }
+});
+
+
+window.addEventListener('hashchange', function(e){
+  console.log('HASSSH THAT WEVE GONE TO')
+  console.log(location.hash)
+  var comps = location.hash.match(/^#?([A-z0-9]*)\/?([A-z0-9]*)?/);
+  var hashHead = comps[1];
+  var id = comps[2];
+  console.log('HASHHEAD')
+  console.log(hashHead)
+
+  document.querySelector('#breadcrumbs').innerHTML = '';
+  if(document.querySelector('.zoom')) document.querySelector('.zoom').classList.remove('zoom');
+
+  if(id != '' && model[id]){
+    document.querySelector('body').classList.add('zooming');
+    document.querySelector(`.note[data-id="${id}"]`).classList.add('zoom');
+    if(hashHead == '') document.querySelector('#outlineIcon').dataset.hashTarget = '/'+id;
+    if(hashHead == 'inbox') document.querySelector('#inboxIcon').dataset.hashTarget = 'inbox/'+id;
+    if(hashHead == 'todo') document.querySelector('#todoIcon').dataset.hashTarget = 'todo/'+id;
+    //add breadcrumbs
+    var crumb = model[id];
+    do{
+      console.log(id)
+      console.log('DOING BREADCRUMBS')
+      var span = document.createElement('span');
+      if(crumb.content.length > 30) span.innerHTML = crumb.content.substr(0, 30).trim()+' ...';
+      else span.innerHTML = crumb.content;
+      span.dataset.hashTarget = '/'+crumb.id;
+      document.querySelector('#breadcrumbs').prepend(span);
+      crumb = modelRaw.find(x => x.id == crumb.parentId);
+    } while(crumb);
+  }
+  else if(hashHead != 'todo'){
+    document.querySelector('body').classList.remove('zooming');
+    document.querySelector('#breadcrumbs').innerHTML = '';
+    if(hashHead == '') document.querySelector('#outlineIcon').dataset.hashTarget = '';
+    if(hashHead == 'inbox') document.querySelector('#inboxIcon').dataset.hashTarget = 'inbox';
+  }
+  //todo view
+  else if(id){
+    var scheduleDate = id;
+    document.querySelector('#todoIcon').dataset.hashTarget = 'todo/'+scheduleDate;
+    document.querySelector(`.tab[data-date="${scheduleDate}"] input`).checked = true;
+  }
+
+  //display the appropriate components
+  switch(hashHead){
+    case "inbox":
+        document.querySelector('body').dataset.display = 'inbox';
+    break;
+    case "todo":
+        document.querySelector('body').dataset.display = 'todo';
+    break;
+    case "":
+      document.querySelector('body').dataset.display = 'outline';
+    break;
+  }
+
+
+});
+
+function processContentInputSnap(el){
   var pos;
+  var length = el.innerText.length;
   if(el == document.activeElement) pos = caret.get(el);
-  el.innerHTML = processText(el.innerText);
-  if(pos && el == document.activeElement) caret.set(el, pos);
+  el.innerHTML = processText('snap', el.innerText, el.parentNode.parentNode.parentNode.dataset.id);
+  var newLength = el.innerText.length;
+  if(pos && el == document.activeElement) caret.set(el, pos-(length-newLength));
 }
 
-module.exports = InputManager;
-
-},{"./noteEvents":8,"./search":9,"./shared/processText":11}],4:[function(require,module,exports){
+},{"./noteEvents":9,"./search":10,"./shared/processText":12}],4:[function(require,module,exports){
 function ajax(method, callback, data){
 
   if(data == null) data = {};
@@ -382,6 +425,7 @@ module.exports = {
 }
 
 function get(el){
+  if(el != document.activeElement) return null;
   var sel = window.getSelection();
   var range = new Range();
   range.setStart(el, 0);
@@ -391,6 +435,7 @@ function get(el){
 
 function set(el, pos){
 
+  if(pos == null) return;
     // Loop through all child nodes
     for(var node of el.childNodes){
         if(node.nodeType == 3){ // we have a text node
@@ -553,6 +598,77 @@ function test(){
 }
 
 },{}],7:[function(require,module,exports){
+window.addEventListener('dragstart', function(e){
+  console.log(e);
+  document.body.classList.add('dragDropHappening');
+  e.target.parentNode.parentNode.parentNode.classList.add('dragOrigin');
+});
+
+window.addEventListener('dragend', function(e){
+  document.body.classList.remove('dragDropHappening');
+  var origin = e.target.parentNode.parentNode.parentNode;
+  origin.classList.remove('dragOrigin');
+  console.log(origin);
+  var target = document.querySelector('.hover');
+  removeHovers();
+  var note = model[origin.dataset.id];
+  var targetNoteDiv = target.parentNode.parentNode.parentNode;
+  console.log('INTERESTIG')
+  console.log(target);
+  console.log(targetNoteDiv);
+  if(target.classList.contains('dragDropTop')){
+    var newPrev = targetNoteDiv.previousElementSibling;
+    var newPrevId = null;
+    if(newPrev) newPrevId = newPrev.dataset.id;
+    var newParent = targetNoteDiv.parentNode;
+    if(newParent.classList.contains('children')) newParent = newParent.parentNode;
+    var newParentId;
+    if(newParent.dataset.id) newParentId = newParent.dataset.id;
+    else if(newParent.id == 'notes') newParentId = null;
+    else if(newParent.id == 'inbox') newParentId = 'INBOX';
+    changeManager.change(note.id, [{prop:"parentId", value:newParentId}, {prop:"precedingId", value:newPrevId}]);
+  }
+  else if(target.classList.contains('dragDropBottom')){
+    var newPrevId = targetNoteDiv.dataset.id;
+    var newParent = targetNoteDiv.parentNode.parentNode;
+    var newParentId;
+    console.log(newParent);
+    if(newParent.dataset.id) newParentId = newParent.dataset.id;
+    else if(newParent.id == 'notes') newParentId = null;
+    else if(newParent.id == 'inbox') newParentId = 'INBOX';
+    changeManager.change(note.id, [{prop:"parentId", value:newParentId}, {prop:"precedingId", value:newPrevId}]);
+  }
+  else if(target.classList.contains('bullet')){
+    changeManager.change(note.id, [{prop:"parentId", value:targetNoteDiv.dataset.id}, {prop:"precedingId", value:null}]);
+  }
+});
+
+window.addEventListener('dragenter', function(e){
+  var el = e.target;
+  console.log(el);
+  var origin = document.querySelector('.dragOrigin');
+  console.log(origin);
+  if((el.classList.contains('dragDropTop') || el.classList.contains('dragDropBottom')) && origin.contains(el) == false){
+    removeHovers();
+    el.classList.add('hover');
+  }
+  else if(origin.contains(el) && origin){
+    removeHovers();
+    origin.querySelector('.dragDropTop').classList.add('hover');
+  }
+  else if(el.classList.contains('bullet') && (el.classList.contains('isParent') == false || (el.classList.contains('isParent') && el.classList.contains('isCollapsed'))) && origin.contains(el) == false && el != origin){
+    removeHovers();
+    el.classList.add('hover');
+  }
+});
+
+function removeHovers(){
+  [].forEach.call(document.querySelectorAll('.hover'), function(hoverEl){
+    hoverEl.classList.remove('hover');
+  });
+}
+
+},{}],8:[function(require,module,exports){
 module.exports = function(date){
   var days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
   var today = new Date();
@@ -562,7 +678,8 @@ module.exports = function(date){
   var diff = Math.floor((date - today) / fac);
   if(diff == 0) return 'today';
   else if(diff == 1) return 'tomorrow';
-  else if(diff < 0){
+  else if(diff == -1) return 'yesterday';
+  else if(diff < -1){
     if(diff > -14){
       return -diff+' days ago';
     }
@@ -585,7 +702,7 @@ function day(date, mod){
   return day;
 }
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 module.exports = function(noteDiv, action, e){
   console.log(e);
   e.preventDefault();
@@ -658,7 +775,7 @@ module.exports = function(noteDiv, action, e){
         case "empty":
         case "end":
           var nextVisibleNote = getNextNoteElement(noteDiv);
-          if(nextVisibleNote && nextVisibleNote.parentNode.parentNode == noteDiv) newNote(note.id, null);
+          if((nextVisibleNote && nextVisibleNote.parentNode.parentNode == noteDiv)||noteDiv.classList.contains('zoom')) newNote(note.id, null);
           else newNote(note.parentId, note.id);
         break
         case "middle":
@@ -685,7 +802,9 @@ module.exports = function(noteDiv, action, e){
     case 'outdent':
       var parent = noteDiv.parentNode.parentNode;
       if(parent.classList.contains('note')){
-        var newParentId = parent.parentNode.parentNode.dataset.id;
+        var newParentId;
+        if(parent.parentNode.id == 'inbox') newParentId = 'INBOX';
+        else newParentId = parent.parentNode.parentNode.dataset.id;
         if(newParentId == undefined) newParentId = null;
         move(note, parent.dataset.id, newParentId);
       }
@@ -711,7 +830,8 @@ module.exports = function(noteDiv, action, e){
     case 'delete':
       if(content.innerText != ''){
         var prev = getPreviousNoteSiblingElement(noteDiv);
-        if(prev == null) break;
+        var prevAny = getPreviousNoteElement(noteDiv);
+        if(prev == null || prev != prevAny) break;
         var prevContent = prev.querySelector('.content');
         var prevContentLength = prevContent.innerText.length;
         var prevNote = model[prev.dataset.id];
@@ -733,38 +853,59 @@ module.exports = function(noteDiv, action, e){
   }
 }
 
+function getTop(el){
+  console.log('GETTING TOP')
+  console.log(el)
+  if(document.querySelector('#inbox').contains(el)) return document.querySelector('#inbox');
+  else return document.querySelector('#outline');
+}
+
 function getPreviousNoteElement(el){
-  var noteEls = Array.prototype.slice.call(document.querySelectorAll(`.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
-  var collapsedEls = Array.prototype.slice.call(document.querySelectorAll(`.isCollapsed .note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
+  var top = getTop(el);
+  var noteEls = Array.prototype.slice.call(top.querySelectorAll(`.note${top.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
+  var collapsedEls = Array.prototype.slice.call(top.querySelectorAll(`.isCollapsed .note${top.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
   var diffEls = noteEls.filter(x=> collapsedEls.includes(x) == false);
   return diffEls[diffEls.indexOf(el) -1];
 }
 
 function getPreviousNoteSiblingElement(el){
+  console.log('WE ARE HERE')
+  var top = getTop(el);
+  console.log(top)
   var parentId = model[el.dataset.id].parentId;
-  if(parentId){
-    var noteEls = Array.prototype.slice.call(document.querySelectorAll(`.note[data-id="${parentId}"]>.children>.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
+  console.log(parentId);
+  console.log(top);
+  if(parentId && parentId != 'INBOX'){
+    console.log('HERE');
+    console.log(parentId);
+    console.log(top);
+    var noteEls = Array.prototype.slice.call(document.querySelectorAll(`#${top.id == 'outline' ? 'notes' : top.id } .note[data-id="${parentId}"]>.children>.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
+    console.log(noteEls);
   }
   else{
-    var noteEls = Array.prototype.slice.call(document.querySelectorAll(`#notes>.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
+    console.log('NO HERE');
+    var noteEls = Array.prototype.slice.call(document.querySelectorAll(`#${top.id == 'outline' ? 'notes' : top.id }>.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
+    console.log(noteEls);
   }
   return noteEls[noteEls.indexOf(el) -1];
 }
 
 function getNextNoteElement(el){
-  var noteEls = Array.prototype.slice.call(document.querySelectorAll(`.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
-  var collapsedEls = Array.prototype.slice.call(document.querySelectorAll(`.isCollapsed .note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
+  var top = getTop(el);
+  var noteEls = Array.prototype.slice.call(top.querySelectorAll(`.note${top.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
+  var collapsedEls = Array.prototype.slice.call(top.querySelectorAll(`.isCollapsed .note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
   var diffEls = noteEls.filter(x=> collapsedEls.includes(x) == false);
   return diffEls[diffEls.indexOf(el) +1];
 }
 
 function getNextNoteSiblingElement(el){
+  var top = getTop(el);
   var parentId = model[el.dataset.id].parentId;
-  if(parentId){
-    var noteEls = Array.prototype.slice.call(document.querySelectorAll(`.note[data-id="${parentId}"]>.children>.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
+  if(parentId && parentId != 'INBOX'){
+    var noteEls = Array.prototype.slice.call(document.querySelectorAll(`#${top.id == 'outline' ? 'notes' : top.id } .note[data-id="${parentId}"]>.children>.note${top.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
   }
   else{
-    var noteEls = Array.prototype.slice.call(document.querySelectorAll(`#notes>.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
+    var noteEls = Array.prototype.slice.call(document.querySelectorAll(`#${top.id == 'outline' ? 'notes' : top.id }>.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
   }
   return noteEls[noteEls.indexOf(el) +1];
 }
@@ -782,7 +923,8 @@ function newNote(parentId, precedingId, content){
 
   modelRaw.push({
     "id": id,
-    "dueDate": null
+    "dueDate": null,
+    "content": ''
   });
   model[id] = modelRaw.find(x => x.id == id);
 
@@ -792,7 +934,7 @@ function newNote(parentId, precedingId, content){
   changeManager.change(id, [{prop:"dateCreated", value:now.toISOString()}, {prop:"parentId", value:parentId}, {prop:"precedingId", value:precedingId}, {prop:"content", value:content}]);
 }
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 module.exports = new Search();
 
 function Search(){
@@ -840,7 +982,7 @@ Search.prototype.apply = function(){
 
 }
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 //module to collect subsequent changes made based on a set of original changes
 //once collected all together, they can then be applied to the DOM or written to the database
 
@@ -871,8 +1013,9 @@ function Change(id, changes, changeList){
 
     //process the text - return the processed version now and add it to the changelist if we are on frontend
     if(change.prop == 'content'){
-      var processed = processText(change.value, id, changeList);
-      if(browser) change.value = processed;
+      console.log('AAAAA');
+      var processed = processText('normal', change.value, id, changeList);
+      change.value = processed;
     }
 
     //add the change to the change list for use later
@@ -889,7 +1032,7 @@ function Change(id, changes, changeList){
           new Change(note.id, [{prop:'isTodo', value:true}], changeList);
         }
         else{
-          if(model[note.parentId].isTodo == false) new Change(note.id, [{prop:'isTodo', value:false}], changeList);
+          if(model[note.parentId] && model[note.parentId].isTodo == false) new Change(note.id, [{prop:'isTodo', value:false}], changeList);
         }
       break;
 
@@ -907,7 +1050,7 @@ function Change(id, changes, changeList){
         if(change.value == true && note.isProjectAndIfSoPriority == 0){
           new Change(note.id, [{prop:'isTodo', value:false}], changeList);
         }
-        else if(change.value == false && model[note.parentId].isTodo == 1){
+        else if(change.value == false && model[note.parentId] && model[note.parentId].isTodo == 1){
           new Change(note.id, [{prop:'isTodo', value:true}], changeList);
         }
       break;
@@ -983,22 +1126,26 @@ function trickleDown(note, change, stopPropTest, changeList){
   });
 }
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 var Change = require('./Change');
 
-var cases = [];
+var casesOriginal = [];
 
-module.exports = function(text, id, changeList){
+module.exports = function(mode, text, id, changeList, useChangeManager = true){
+
+  if(text == null) text = '';
+
+  var cases = casesOriginal.filter(x=> x.modes.includes(mode));
+
   cases.forEach(function(rcase){
     //check for match(es), if none apply the false value
-    if(changeList == undefined && rcase.waitForThrottle) return;
-    console.log('backend?')
-    if(rcase.regexp.test(text) == false){
+    if(mode == 'normal' && rcase.regexp.test(text) == false){
       //only make the update if it's not already that value
-      if(id != undefined && rcase.prop && rcase.updateValueFalse && model[id][rcase.prop] != rcase.updateValueFalse) new Change(id, [{prop:rcase.prop, value:rcase.updateValueFalse}], changeList);
+      if(rcase.updateValueFalse != undefined && model[id][rcase.prop] != rcase.updateValueFalse) new Change(id, [{prop:rcase.prop, value:rcase.updateValueFalse}], changeList);
     }
     //replace matches
     else text = text.replace(rcase.regexp, function(match){
+      //prepare original, groups for other functions
       var original = arguments[arguments.length-1];
       var groups = [];
       for(var x = 1; x < arguments.length-2; x++){
@@ -1009,18 +1156,23 @@ module.exports = function(text, id, changeList){
       if(rcase.processFunc) processResult = rcase.processFunc(match, groups, original);
 
       //make changes to other properties if required
-      if(id != undefined && rcase.prop){
+      if(mode == 'normal' || mode == 'snap'){
         var updateResult;
         if(typeof rcase.updateTemplate === 'string' || rcase.updateTemplate instanceof String) updateResult = fill(rcase.updateTemplate, match, groups, original, processResult);
         else updateResult = rcase.updateTemplate;
         //only make changes if we need to
-        if(model[id][rcase.prop] != updateResult) new Change(id, [{prop:rcase.prop, value:updateResult}], changeList);
+        if(model[id][rcase.prop] != updateResult){
+          if(mode == 'snap' && useChangeManager != false){
+            changeManager.change(id, [{prop:rcase.prop, value:updateResult}], changeList);
+          }
+          else new Change(id, [{prop:rcase.prop, value:updateResult}], changeList);
+        }
       }
 
-      return fill(rcase.replaceTemplate, match, groups, original, processResult);
+      if(mode == 'blur') return fill(rcase.blurReplaceTemplate, match, groups, original, processResult);
+      else return fill(rcase.replaceTemplate, match, groups, original, processResult);
     });
   });
-
   //always return manipulated text, even if it's not needed
   return text;
 }
@@ -1031,93 +1183,90 @@ function fill(template, match, groups, original, processResult){
 
 function Case(options){
   var self = this;
-  ['regexp', 'prop', 'updateTemplate', 'updateValueFalse', 'replaceTemplate', 'processFunc', 'waitForThrottle'].forEach(x=> self[x] = options[x]);
-  cases.push(self);
+  ['regexp', 'prop', 'updateTemplate', 'updateValueFalse', 'replaceTemplate', 'blurReplaceTemplate', 'processFunc', 'modes'].forEach(x=> self[x] = options[x]);
+  casesOriginal.push(self);
 }
 
 
 // // = memo
 new Case({
-  regexp: /^\/\/.*/,
+  modes: ['normal','blur'],
+  regexp: /^\/\/(.*)/,
   prop: 'isMemo',
   updateTemplate: true,
   updateValueFalse: false,
-  replaceTemplate: '${this.original}',
-  processFunc: null
+  replaceTemplate: '${this.match}',
+  blurReplaceTemplate: '${this.processResult}',
+  processFunc: function(match, groups, original){
+    return groups[0];
+  }
 });
 
 // *-***** = project priority
 new Case({
+  modes: ['normal','blur'],
   regexp: /(^|\s)(\*{1,25})(\s|$)/,
   prop: 'isProjectAndIfSoPriority',
   updateTemplate: '${this.processResult}',
-  updateValueFalse: false,
-  replaceTemplate: '${this.groups[0]}<span class=\'priority\'>${this.groups[1]}</span>${this.groups[2]}',
+  updateValueFalse: 0,
+  replaceTemplate: '${this.match}',
+  blurReplaceTemplate: '${this.groups[0]}<span class=\'priority\'>${this.groups[1]}</span>${this.groups[2]}',
   processFunc: function(match, groups, original){
     return groups[1].length;
   }
 });
 
 // ! = important
-/*new Case({
-  regexp: /(^|\s)(!)(\s|$)/,
+new Case({
+  modes: ['normal','blur'],
+  regexp: /(^|\s)(\[!\])(\s|$)/,
   prop: 'isImportant',
   updateTemplate: true,
   updateValueFalse: false,
-  replaceTemplate: '${this.groups[0]}<span class=\'important\'>${this.groups[1]}</span>${this.groups[2]}',
+  replaceTemplate: '${this.match}',
+  blurReplaceTemplate: '',
   processFunc: null
 });
-*/
 
 // https://mail.google.com/mail/?=? = email icon link
 new Case({
-  regexp: /(https\:\/\/mail\.google\.com\/mail\/\S*)=(\S+)\s/g,
-  prop: null,
-  updateTemplate: null,
-  updateValueFalse: null,
-  replaceTemplate: '<span class="email fas fa-envelope"></span><a contenteditable=false href="${this.groups[0]}"><span contenteditable="false" class="hidden">${this.groups[0]}=</span>${this.groups[1]}</a>&nbsp;',
-  processFunc: function(match, groups, original){
-
-  }
+  modes: ['blur'],
+  regexp: /(^|\s)(https\:\/\/mail\.google\.com\/mail\/\S*)=(\S+)(\s|$)/g,
+  blurReplaceTemplate: '${this.groups[0]}<span class="email fas fa-envelope"></span><a contenteditable=false href="${this.groups[1]}">${this.groups[2]}</a>${this.groups[3]}',
 });
 
 // ?.?=? = link
 new Case({
-  regexp: /(\S+\.\S+)=(\S+)\s/g,
-  prop: null,
-  updateTemplate: null,
-  updateValueFalse: null,
-  replaceTemplate: '${this.processResult}',
+  modes: ['blur'],
+  regexp: /(^|\s)(\S+\.\S+)=(\S+)(\s|$)/g,
+  blurReplaceTemplate: '${this.processResult}',
   processFunc: function(match, groups, original){
     var proto = '';
     if(match.substr(0,5) != 'http:' && match.substr(0,6) != 'https:' && match.substr(0,5) != 'file:') proto = 'http://';
-    return `<a contentEditable="false" href="${proto}${groups[0]}"><span class="hidden" contenteditable="false">${groups[0]}=</span>${groups[1]}</a>&nbsp;`;
+    return `${groups[0]}<a contenteditable=false href="${proto}${groups[1]}">${groups[2]}</a>${groups[3]}`;
   }
 });
 
 // #tag
 new Case({
-  regexp: /#(\S+)(\s|$)/g,
-  prop: null,
-  updateTemplate: null,
-  updateValueFalse: null,
-  replaceTemplate: '<span class=\'tag\' data-tag=\'#${this.groups[0]}\'>#${this.groups[0]}</span>${this.groups[1]}',
-  processFunc: null
+  modes: ['blur'],
+  regexp: /(^|\s)#(\S+)(\s|$)/g,
+  blurReplaceTemplate: '${this.groups[0]}<a class="tag" href="" contenteditable=false data-tag=\'#${this.groups[1]}\'>#${this.groups[1]}</a>${this.groups[2]}',
 });
 
 //due date
 new Case({
-  waitForThrottle: true,
-  regexp: /(?:^|\s)due (?:(today|tomorrow)|(next )?((?:mon|tues|wednes|thurs|fri|sat|sun)day)|(next week|next month)|(in) (?:(1) (week|day|month)|(\d*) (days|weeks|months)))(?:\s|$)/,
+  modes: ['snap'],
+  regexp: /(?:^|\s)due (?:(today|tomorrow)|(next )?((?:mon|tues|wednes|thurs|fri|satur|sun)day)|(next week|next month)|in (?:(1) (week|day|month)|(\d*) (days|weeks|months)))(?:\s|$)/,
   prop: 'dueDate',
   updateTemplate: '${this.processResult.toISOString()}',
-  updateValueFalse: undefined,
   replaceTemplate: '',
-  replacePermanently: true,
   processFunc: function(match, groups, original){
     var date = new Date();
     date.setHours(9,0,0,0);
     groups.unshift('');
+    console.log('HERE');
+    console.log(groups);
     if(groups[1]){
       if(groups[1] == 'today') return date;
       else{
@@ -1125,7 +1274,7 @@ new Case({
         return date;
       }
     }
-    else if(groups[3]){
+      else if(groups[3]){
       var nextExplicit = false;
       if(groups[2] == 'next') nextExplicit = true;
       var day = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].indexOf(groups[3].substr(0,1).toUpperCase()+groups[3].substr(1).toLowerCase());
@@ -1141,24 +1290,24 @@ new Case({
         return date;
       }
     }
-    else if(groups[6]){
-      if(groups[7] == 'day'){
+    else if(groups[5]){
+      if(groups[6] == 'day'){
         date.setDate(date.getDate()+1);
         return date;
       }
-      if(groups[7] == 'week'){
+      if(groups[6] == 'week'){
         date.setDate(date.getDate()+7);
         return date;
       }
-      if(groups[7] == 'month'){
+      if(groups[6] == 'month'){
         date.setDate(date.getDate()+30);
         return date;
       }
     }
     else{
-      var quant = parseInt(groups[8]);
+      var quant = parseInt(groups[7]);
       var days;
-      switch(groups[9]){
+      switch(groups[8]){
         case "days":
           days = quant;
         break;
@@ -1168,24 +1317,29 @@ new Case({
         case "months":
           days = quant * 30;
         break;
-        date.setDate(date.getDate()+days);
-        return date;
       }
+      date.setDate(date.getDate()+days);
+      return date;
     }
   }
 });
 
 // ~4h time estimate
-/*
 new Case({
-  regexp: /(^|\s)~(?!(?:\s|$))((?:\d?\d(?:\.\d)?h)?(?:\d?\dm)?)(\s|$)/,
-  prop: 'hasTimeEstimate',
-  updateTemplate: '${this.groups[1]}',
-  updateValueFalse: null,
-  replaceTemplate: '${this.groups[0]}<span class=\'timeEstimate\'>~${this.groups[1]}</span>${this.groups[2]}',
-  processFunc: null
+  modes: ['normal','blur'],
+  regexp: /(^|\s)~(\d+(?:.\d+)?)(h)?(\s|$)/,
+  prop: 'timeEstimate',
+  updateTemplate: '${this.processResult}',
+  updateValueFalse: 15,
+  replaceTemplate: '${this.match}',
+  blurReplaceTemplate: '${this.groups[0]}<span class=\'timeEstimate\'>~${this.groups[1]}${this.groups[2] != undefined ? this.groups[2] : ``}</span>${this.groups[3]}',
+  processFunc: function(match, groups, original){
+    console.log('TIME ESTIMATE GRUOPS')
+    console.log(groups);
+    if(groups[2] != undefined) return Math.round(parseFloat(groups[1])*60);
+    else return Math.round(parseFloat(groups[1]));
+  }
 });
-*/
 
 /*
 new Case({
@@ -1197,16 +1351,6 @@ new Case({
   processFunc:
 });
 */
-
-var dateRegexes = [
-  /a/,
-  /b/
-];
-
-dateRegexes.forEach(function(regex){
-
-});
-
 
 function getDay(date, mod){
   if(!mod) mod = 0;
@@ -1231,7 +1375,7 @@ function getNextXDay(date, day, explicitNext){ //0 = monday
   return tempDate;
 }
 
-},{"./Change":10}],12:[function(require,module,exports){
+},{"./Change":11}],13:[function(require,module,exports){
 function Throttle(seconds){
   this.seconds = seconds;
 }

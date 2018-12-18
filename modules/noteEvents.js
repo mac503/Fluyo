@@ -70,7 +70,7 @@ module.exports = function(noteDiv, action, e){
         case "empty":
         case "end":
           var nextVisibleNote = getNextNoteElement(noteDiv);
-          if(nextVisibleNote && nextVisibleNote.parentNode.parentNode == noteDiv) newNote(note.id, null);
+          if((nextVisibleNote && nextVisibleNote.parentNode.parentNode == noteDiv)||noteDiv.classList.contains('zoom')) newNote(note.id, null);
           else newNote(note.parentId, note.id);
         break
         case "middle":
@@ -97,7 +97,9 @@ module.exports = function(noteDiv, action, e){
     case 'outdent':
       var parent = noteDiv.parentNode.parentNode;
       if(parent.classList.contains('note')){
-        var newParentId = parent.parentNode.parentNode.dataset.id;
+        var newParentId;
+        if(parent.parentNode.id == 'inbox') newParentId = 'INBOX';
+        else newParentId = parent.parentNode.parentNode.dataset.id;
         if(newParentId == undefined) newParentId = null;
         move(note, parent.dataset.id, newParentId);
       }
@@ -123,7 +125,8 @@ module.exports = function(noteDiv, action, e){
     case 'delete':
       if(content.innerText != ''){
         var prev = getPreviousNoteSiblingElement(noteDiv);
-        if(prev == null) break;
+        var prevAny = getPreviousNoteElement(noteDiv);
+        if(prev == null || prev != prevAny) break;
         var prevContent = prev.querySelector('.content');
         var prevContentLength = prevContent.innerText.length;
         var prevNote = model[prev.dataset.id];
@@ -145,38 +148,59 @@ module.exports = function(noteDiv, action, e){
   }
 }
 
+function getTop(el){
+  console.log('GETTING TOP')
+  console.log(el)
+  if(document.querySelector('#inbox').contains(el)) return document.querySelector('#inbox');
+  else return document.querySelector('#outline');
+}
+
 function getPreviousNoteElement(el){
-  var noteEls = Array.prototype.slice.call(document.querySelectorAll(`.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
-  var collapsedEls = Array.prototype.slice.call(document.querySelectorAll(`.isCollapsed .note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
+  var top = getTop(el);
+  var noteEls = Array.prototype.slice.call(top.querySelectorAll(`.note${top.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
+  var collapsedEls = Array.prototype.slice.call(top.querySelectorAll(`.isCollapsed .note${top.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
   var diffEls = noteEls.filter(x=> collapsedEls.includes(x) == false);
   return diffEls[diffEls.indexOf(el) -1];
 }
 
 function getPreviousNoteSiblingElement(el){
+  console.log('WE ARE HERE')
+  var top = getTop(el);
+  console.log(top)
   var parentId = model[el.dataset.id].parentId;
-  if(parentId){
-    var noteEls = Array.prototype.slice.call(document.querySelectorAll(`.note[data-id="${parentId}"]>.children>.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
+  console.log(parentId);
+  console.log(top);
+  if(parentId && parentId != 'INBOX'){
+    console.log('HERE');
+    console.log(parentId);
+    console.log(top);
+    var noteEls = Array.prototype.slice.call(document.querySelectorAll(`#${top.id == 'outline' ? 'notes' : top.id } .note[data-id="${parentId}"]>.children>.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
+    console.log(noteEls);
   }
   else{
-    var noteEls = Array.prototype.slice.call(document.querySelectorAll(`#notes>.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
+    console.log('NO HERE');
+    var noteEls = Array.prototype.slice.call(document.querySelectorAll(`#${top.id == 'outline' ? 'notes' : top.id }>.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
+    console.log(noteEls);
   }
   return noteEls[noteEls.indexOf(el) -1];
 }
 
 function getNextNoteElement(el){
-  var noteEls = Array.prototype.slice.call(document.querySelectorAll(`.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
-  var collapsedEls = Array.prototype.slice.call(document.querySelectorAll(`.isCollapsed .note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
+  var top = getTop(el);
+  var noteEls = Array.prototype.slice.call(top.querySelectorAll(`.note${top.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
+  var collapsedEls = Array.prototype.slice.call(top.querySelectorAll(`.isCollapsed .note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
   var diffEls = noteEls.filter(x=> collapsedEls.includes(x) == false);
   return diffEls[diffEls.indexOf(el) +1];
 }
 
 function getNextNoteSiblingElement(el){
+  var top = getTop(el);
   var parentId = model[el.dataset.id].parentId;
-  if(parentId){
-    var noteEls = Array.prototype.slice.call(document.querySelectorAll(`.note[data-id="${parentId}"]>.children>.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
+  if(parentId && parentId != 'INBOX'){
+    var noteEls = Array.prototype.slice.call(document.querySelectorAll(`#${top.id == 'outline' ? 'notes' : top.id } .note[data-id="${parentId}"]>.children>.note${top.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
   }
   else{
-    var noteEls = Array.prototype.slice.call(document.querySelectorAll(`#notes>.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
+    var noteEls = Array.prototype.slice.call(document.querySelectorAll(`#${top.id == 'outline' ? 'notes' : top.id }>.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
   }
   return noteEls[noteEls.indexOf(el) +1];
 }
@@ -194,7 +218,8 @@ function newNote(parentId, precedingId, content){
 
   modelRaw.push({
     "id": id,
-    "dueDate": null
+    "dueDate": null,
+    "content": ''
   });
   model[id] = modelRaw.find(x => x.id == id);
 

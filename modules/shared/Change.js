@@ -28,8 +28,9 @@ function Change(id, changes, changeList){
 
     //process the text - return the processed version now and add it to the changelist if we are on frontend
     if(change.prop == 'content'){
-      var processed = processText(change.value, id, changeList);
-      if(browser) change.value = processed;
+      console.log('AAAAA');
+      var processed = processText('normal', change.value, id, changeList);
+      change.value = processed;
     }
 
     //add the change to the change list for use later
@@ -46,7 +47,7 @@ function Change(id, changes, changeList){
           new Change(note.id, [{prop:'isTodo', value:true}], changeList);
         }
         else{
-          if(model[note.parentId].isTodo == false) new Change(note.id, [{prop:'isTodo', value:false}], changeList);
+          if(model[note.parentId] && model[note.parentId].isTodo == false) new Change(note.id, [{prop:'isTodo', value:false}], changeList);
         }
       break;
 
@@ -64,7 +65,7 @@ function Change(id, changes, changeList){
         if(change.value == true && note.isProjectAndIfSoPriority == 0){
           new Change(note.id, [{prop:'isTodo', value:false}], changeList);
         }
-        else if(change.value == false && model[note.parentId].isTodo == 1){
+        else if(change.value == false && model[note.parentId] && model[note.parentId].isTodo == 1){
           new Change(note.id, [{prop:'isTodo', value:true}], changeList);
         }
       break;

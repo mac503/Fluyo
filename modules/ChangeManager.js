@@ -52,9 +52,9 @@ function drawUpdates(updates){
       console.log(id);
       var content = div.querySelector('.content');
       var caretPos = caret.get(content);
-
       var parentDiv = document.querySelector(`.note[data-id="${update.parentId}"] .children`);
       if(update.parentId == null) parentDiv = document.querySelector('#notes');
+      if(update.parentId == 'INBOX') parentDiv = document.querySelector('#inbox');
       if(update.parentId == 'deleted') parentDiv = holdingPen;
       console.log(parentDiv);
       var precedingDiv = document.querySelector(`.note[data-id="${update.precedingId}"]`);
