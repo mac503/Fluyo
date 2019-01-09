@@ -1,0 +1,23 @@
+#saveIndicator{
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+#saveIndicator.show::after{
+  content: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><circle r="5" cx="55" cy="40"></circle><circle r="5" cx="50.60660171779821" cy="50.60660171779821"></circle><circle r="5" cx="40" cy="55"></circle><circle r="5" cx="29.393398282201787" cy="50.60660171779821"></circle><circle r="5" cx="25" cy="40"></circle><circle r="5" cx="29.393398282201787" cy="29.393398282201787"></circle><circle r="5" cx="40" cy="25"></circle><circle r="5" cx="50.60660171779821" cy="29.393398282201787"></circle></svg>');
+  -webkit-mask-image: linear-gradient(to bottom right, transparent 25%, black);
+  mask-image: linear-gradient(to bottom right, transparent 25%, black);
+  width: 4em;
+  height: 4em;
+  display: block;
+  animation: spin 1.8s linear infinite;
+}
+
+@keyframes spin{
+  from{
+    transform: rotate(0deg);
+  }
+  to{
+    transform: rotate(360deg);
+  }
+}

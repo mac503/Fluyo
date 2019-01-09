@@ -8,12 +8,10 @@ function ajax(method, callback, data){
   xhr.setRequestHeader('Content-type', 'application/json');
   xhr.onreadystatechange = function () {
       if (xhr.readyState === 4 && xhr.status === 200) {
-          console.log(xhr.responseText);
           var json = JSON.parse(xhr.responseText);
           callback(json);
       }
   };
-  if(data) console.log(data);
   if(method != 'GET') xhr.send(JSON.stringify(data));
   else xhr.send();
 }

@@ -5,7 +5,7 @@
   "main": "backend.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build:css": "cat css/* > public/styles.css && exit 0",
+    "build:css": "find css -name '*.css' -exec cat {} \\; > public/styles.css && exit 0",
     "watch": "watchify frontend.js -o public/bundle.js -v & watch 'npm run build:css' css",
     "build": "browserify frontend.js -o public/bundle.js -v",
     "start": "npm run watch & nodemon backend.js"

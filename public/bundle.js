@@ -1,53 +1,220 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
-ajax = require('./modules/ajax');
-require('./modules/InputManager');
-require('./modules/dragDrop');
-processText = require('./modules/shared/processText');
-caret = require('./modules/caret')
-throttle = require('./modules/throttle')
-dateBox = require('./modules/dateBox')
-friendlyDate = require('./modules/friendlyDate')
-
-applyClasses = ['isParent', 'isTodo', 'isCollapsed', 'isComplete',
-'isDescendantOfComplete', 'isProjectAndIfSoPriority', 'isImportant', 'hasTimeEstimate'];
-
-modelRaw = [];
-model = {};
-
-console.log(model);
-
-changeManager = require('./modules/ChangeManager');
-
-holdingPen = document.createElement('div');
-
-ajax.get(function(data){
-  var notesDiv = document.querySelector('#notes');
-  var inboxDiv = document.querySelector('#inbox');
-  modelRaw = data;
-  modelRaw.forEach(function(note){
-    model[note.id] = note;
-  });
-  orderNotes(modelRaw.filter(x => x.parentId == null)).forEach(function(note){
-    drawNote(note, notesDiv);
-  });
-  orderNotes(modelRaw.filter(x => x.parentId == 'INBOX')).forEach(function(note){
-    drawNote(note, inboxDiv);
-  });
-  populateSchedule();
+//initialise model
+require('./modules/frontend/model/model').initialise(function(model){
+  //then
+  //setup event listeners
+  require('./modules/frontend/events/listeners')(model);
+  //draw the loaded data
+  require('./modules/frontend/dom/initial-draw')(model);
+  //set id of last confirmed change
+  require('./modules/frontend/operations-wrappers/change-history').setOffset(model.currentChange);
+  //pick up the required bullet from the url if necessary
   window.dispatchEvent(new HashChangeEvent("hashchange"));
+  //perhaps load any display settings saved in localstorage if necessary?
 });
 
-drawNote = function(note, parentNode, drawChildren = true){
-  var div = createNoteDiv(note);
-  parentNode.appendChild(div);
-  var divChildrenHolder = div.querySelector('.children');
-  if(drawChildren){
-    var childrenRaw = modelRaw.filter(x => x.parentId == note.id);
-    var children = orderNotes(childrenRaw);
-    children.forEach(function(child){
-      drawNote(child, divChildrenHolder);
+},{"./modules/frontend/dom/initial-draw":5,"./modules/frontend/events/listeners":10,"./modules/frontend/model/model":23,"./modules/frontend/operations-wrappers/change-history":24}],2:[function(require,module,exports){
+module.exports = {
+  prevSibling: function(el, filters){
+    if(filters == 'visible'){
+      filters = [{prop:'display', values:['block','inline-block']}];
+    }
+    if(el.classList.contains('note') == false) el = el.closest('.note');
+    if(el == null){
+      console.log('ERROR: Sibling finder: Could not find a note element based on the element passed.');
+      return null;
+    }
+    var siblings = el.closest('.notesContainer').querySelectorAll(`[data-id="${el.parentNode.parentNode.dataset.id}"]>.children>.note`);
+    siblings = [...siblings];
+    if(filters){
+      filters.forEach(function(filter){
+        siblings = siblings.filter(x=> x==el || filter.values.some(y=> getComputedStyle(x)[filter.prop].includes(y)));
+      });
+    }
+    var index = siblings.indexOf(el);
+    if(index == 0) return null;
+    else return siblings[index-1];
+  },
+  nextSibling: function(el, filters){
+    if(filters == 'visible'){
+      filters = [{prop:'display', values:['block','inline-block']}];
+    }
+    if(el.classList.contains('note') == false) el = el.closest('.note');
+    if(el == null){
+      console.log('ERROR: Sibling finder: Could not find a note element based on the element passed.');
+      return null;
+    }
+    var siblings = el.closest('.notesContainer').querySelectorAll(`[data-id="${el.parentNode.parentNode.dataset.id}"]>.children>.note`);
+    siblings = [...siblings];
+    if(filters){
+      filters.forEach(function(filter){
+        siblings = siblings.filter(x=> x==el || filter.values.some(y=> getComputedStyle(x)[filter.prop].includes(y)));
+      });
+    }
+    var index = siblings.indexOf(el);
+    if(index == siblings.length-1) return null;
+    else return siblings[index+1];
+  },
+  prevInView: function(el, filters){
+    if(filters == 'visible'){
+      filters = [{prop:'display', values:['block','inline-block']}];
+    }
+    if(el.classList.contains('note') == false) el = el.closest('.note');
+    if(el == null){
+      console.log('ERROR: Sibling finder: Could not find a note element based on the element passed.');
+      return null;
+    }
+    var cousins = el.closest('.notesContainer').querySelectorAll(`.note`);
+    cousins = [...cousins];
+    if(filters){
+      filters.forEach(function(filter){
+        cousins = cousins.filter(x=> x==el || filter.values.some(y=> getComputedStyle(x)[filter.prop].includes(y)));
+      });
+    }
+    var index = cousins.indexOf(el);
+    if(index == 0) return null;
+    else return cousins[index-1];
+  },
+  nextInView: function(el, filters){
+    if(filters == 'visible'){
+      filters = [{prop:'display', values:['block','inline-block']}];
+    }
+    if(el.classList.contains('note') == false) el = el.closest('.note');
+    if(el == null){
+      console.log('ERROR: Sibling finder: Could not find a note element based on the element passed.');
+      return null;
+    }
+    var cousins = el.closest('.notesContainer').querySelectorAll(`.note`);
+    cousins = [...cousins];
+    if(filters){
+      filters.forEach(function(filter){
+        cousins = cousins.filter(x=> x==el || filter.values.some(y=> getComputedStyle(x)[filter.prop].includes(y)));
+      });
+    }
+    var index = cousins.indexOf(el);
+    if(index == cousins.length-1) return null;
+    else return cousins[index+1];
+  },
+  firstInView: function(el, filters){
+    if(filters == 'visible'){
+      filters = [{prop:'display', values:['block','inline-block']}];
+    }
+    if(el.classList.contains('note') == false) el = el.closest('.note');
+    if(el == null){
+      console.log('ERROR: Sibling finder: Could not find a note element based on the element passed.');
+      return null;
+    }
+    var cousins = el.closest('.notesContainer').querySelectorAll(`.note`);
+    cousins = [...cousins];
+    if(filters){
+      filters.forEach(function(filter){
+        cousins = cousins.filter(x=> x==el || filter.values.some(y=> getComputedStyle(x)[filter.prop].includes(y)));
+      });
+    }
+    if(cousins.length > 0) return cousins[0];
+    else return null;
+  },
+  lastInView: function(el, filters){
+    if(filters == 'visible'){
+      filters = [{prop:'display', values:['block','inline-block']}];
+    }
+    if(el.classList.contains('note') == false) el = el.closest('.note');
+    if(el == null){
+      console.log('ERROR: Sibling finder: Could not find a note element based on the element passed.');
+      return null;
+    }
+    var cousins = el.closest('.notesContainer').querySelectorAll(`.note`);
+    cousins = [...cousins];
+    if(filters){
+      filters.forEach(function(filter){
+        cousins = cousins.filter(x=> x==el || filter.values.some(y=> getComputedStyle(x)[filter.prop].includes(y)));
+      });
+    }
+    if(cousins.length > 0) return cousins[cousins.length-1];
+    else return null;
+  },
+  children: function(el, filters){
+    if(filters == 'visible'){
+      filters = [{prop:'display', values:['block','inline-block']}];
+    }
+    if(el.classList.contains('note') == false) el = el.closest('.note');
+    if(el == null){
+      console.log('ERROR: Children finder: Could not find a note element based on the element passed.');
+      return null;
+    }
+    var children = document.querySelectorAll(`.note[data-id="${el.dataset.id}"]>.children>.note`);
+    children = [...children];
+    if(filters){
+      filters.forEach(function(filter){
+        children = children.filter(x=> x==el || filter.values.some(y=> getComputedStyle(x)[filter.prop].includes(y)));
+      });
+    }
+    return children;
+  },
+  flashHighlight(el){
+    if(el.classList.contains('content') == false) el = el.querySelector('.content');
+    if(el.classList.contains('flashHighlight')) el.classList.remove('flashHighlight');
+    requestAnimationFrame(function(){
+      el.classList.add('flashHighLight');
+      window.setTimeout(function(){
+        el.classList.remove('flashHighLight');
+      }, 1000);
     });
   }
+
+}
+
+},{}],3:[function(require,module,exports){
+var updateNoteInstances = require('./update-note-instances');
+
+module.exports = function(changes){
+  Object.getOwnPropertyNames(changes).forEach(function(id){
+    updateNoteInstances(id, changes[id]);
+  });
+}
+
+},{"./update-note-instances":8}],4:[function(require,module,exports){
+module.exports = `
+<div class='filterComponent'></div>
+`;
+
+/*
+
+<div id='topbar'>
+  <div id='navigation'>
+    <div id='navigationHome' class="fas fa-home" data-hash-target=''></div>
+    <div id='breadcrumbs'></div>
+  </div>
+  <div id='inboxIcon' class="fas fa-inbox" data-hash-target='inbox'></div>
+  <div id='outlineIcon' class="fas fa-list-ul" data-hash-target=''></div>
+  <div id='todoIcon' class="fas fa-clipboard-list" data-hash-target='todo'></div>
+  <div id='toggleCompleted' class="far fa-check-square"></div>
+  <div id='search'><div id='searchBoxHolder'><input type='text' placeholder='&#xF002;'></input></div></div>
+</div>
+
+*/
+
+},{}],5:[function(require,module,exports){
+var outlineComponent = require('./outline-component');
+var newNoteDiv = require('./new-note-div');
+var updateNoteNode = require('./update-note-node');
+
+//create a new outline component in panel1
+module.exports = function(model){
+
+  document.querySelector('#panel1').appendChild(outlineComponent('OUTLINE'));
+  document.querySelector('#panel2').appendChild(outlineComponent('OUTLINE'));
+
+  //for each outline component, populate the notes which should be there
+  [].forEach.call(document.querySelectorAll('[data-outline-component]'), function(component){
+    var holdingPen = component.querySelector('.holdingPen');
+    orderNotes(model.raw.filter(x => x.parentId == component.dataset.topLevelId)).forEach(function(note){
+      drawNote(note, holdingPen, model);
+    });
+  });
+
+  //TODO later here draw the priority view and todo view
+
 }
 
 function orderNotes(childrenRaw){
@@ -61,323 +228,860 @@ function orderNotes(childrenRaw){
   return children;
 }
 
-createNoteDiv = function(note){
-  var div = document.createElement('div');
-  div.dataset.id = note.id;
-  div.classList.add('note');
-  applyClasses.forEach(function(prop){
-    if(note[prop]) div.classList.add(prop);
+function drawNote(note, holdingPen, model){
+  var div = newNoteDiv(note.id);
+  holdingPen.appendChild(div);
+  updateNoteNode(div, note, true);
+  var divChildrenHolder = div.querySelector('.children');
+  var childrenRaw = model.raw.filter(x => x.parentId == note.id);
+  var children = orderNotes(childrenRaw);
+  children.forEach(function(child){
+    drawNote(child, holdingPen, model);
   });
+}
+
+},{"./new-note-div":6,"./outline-component":7,"./update-note-node":9}],6:[function(require,module,exports){
+module.exports = function(id){
+  var div = document.createElement('div');
+  div.dataset.id = id;
+  div.classList.add('note');
   div.innerHTML = `
     <div class='topLine'>
       <div class='left'>
-        <div class='toggle'></div>
+        <div class='toggle' data-events-handler='toggle'></div>
         <div class='bullet' draggable='true'></div>
       </div>
       <div class='contentHolder'><div class='dragDropTop'></div><div class='dragDropBottom'></div>
-        <div class='content' contenteditable>${processText('blur', note.content, note.id)}</div>
-        <div class='dueDate' data-date='${new Date(note.dueDate).getTime()}'>due ${friendlyDate(new Date(note.dueDate))} <span class='clearDate'></div>
+        <div class='content' contenteditable='true' data-events-handler='note-content'></div>
+        <div class='dueDate' data-date=''><span class='clearDate'></span></div>
       </div>
     </div>
     <div class='children'></div>
   `;
-  div.querySelector('.bullet').dataset.hashTarget = '/'+note.id;
   return div;
 }
 
-populateSchedule = function(){
-  var today = new Date();
-  today.setHours(0,0,0,0);
-  date = today.getDate();
-  workingDate = new Date(today.getTime());
-  document.querySelector('#tabs').innerHTML = `
-    ${Array(7).fill().map((x,i)=> `
-      <div class='tab' data-date='${workingDate.setDate(date+i)}'><input type="radio" id="tab-${i}" name="tabs" ${i==0 ? 'checked' : ''}><label for="tab-${i}" data-hash-target='/${workingDate.setDate(date+i)}'>${i==0 ? `Today` : i==1 ? 'Tomorrow' : ['Sun','Mon','Tues','Wednes','Thurs','Fri','Satur','Sun'][new Date(workingDate.setDate(date+i)).getDay()]+'day'}</label><div class='content'></div></div>
-    `).join('')}
+},{}],7:[function(require,module,exports){
+var filterComponent = require('./filter-component');
+
+module.exports = function(topLevelId){
+  var div = document.createElement('div');
+  div.dataset.outlineComponent = true;
+  div.dataset.topLevelId = topLevelId;
+  div.dataset.id = topLevelId;
+  div.innerHTML = `
+    ${filterComponent}
+    <div class='notesContainer' data-id='${topLevelId}'>
+      <div class='children'></div>
+    </div>
+    <div class='holdingPen'></div>
   `;
+  return div;
 }
 
-},{"./modules/ChangeManager":2,"./modules/InputManager":3,"./modules/ajax":4,"./modules/caret":5,"./modules/dateBox":6,"./modules/dragDrop":7,"./modules/friendlyDate":8,"./modules/shared/processText":12,"./modules/throttle":13}],2:[function(require,module,exports){
-var Change = require('./shared/Change');
+},{"./filter-component":4}],8:[function(require,module,exports){
+var newNoteDiv = require('./new-note-div');
+var updateNoteNode = require('./update-note-node');
+var model = require('../model/model');
 
-function ChangeManager(){
-
+module.exports = function(id, changes){
+  //find all examples of the note within the DOM
+  if(id != 'NEW' && document.querySelector(`[data-id="${id}"]`) == null){
+    [].forEach.call(document.querySelectorAll(`:not(.notesContainer)[data-id="${model.names[id].parentId}"]`), function(parentDiv){
+      var div = newNoteDiv(id);
+      parentDiv.querySelector('.children').appendChild(div);
+    });
+  }
+  [].forEach.call(document.querySelectorAll(`[data-id="${id}"]`), function(div){
+    updateNoteNode(div, changes);
+  });
 }
 
-ChangeManager.prototype.change = function(id, changes, fallThrough){
+},{"../model/model":23,"./new-note-div":6,"./update-note-node":9}],9:[function(require,module,exports){
+var domHelpers = require('./dom-helpers');
+var caret = require('../utils/caret');
+var isVisible = require('../utils/is-visible');
 
-  console.log('NOW WE ARE HERE')
-
-  var nowISO = new Date().toISOString();
-
-  changes.forEach(function(change){
-    if(change.value === true) change.value = 1;
-    if(change.value === false) change.value = 0;
-    if(change.prop == 'isComplete'){
-      if(change.value == 1) changes.push({prop:'dateCompleted', value: nowISO});
-      else changes.push({prop:'dateCompleted', value: null});
+module.exports = function(div, changes, initialDraw=false){
+  //list changes which get applied as class changes
+  ['isProject', 'isParent', 'isCollapsed', 'isComplete'].forEach(function(prop){
+    if(changes.hasOwnProperty(prop)){
+      if(changes[prop] == true || changes[prop] == 1) div.classList.add(prop);
+      else div.classList.remove(prop);
     }
   });
+  //if we currently have focus on the content field, will need to reset the cursor after things have been changed
+  var resetCursor = false;
+  var contentEl = div.querySelector('.content');
+  if(contentEl == document.activeElement){
+    resetCursor = true;
+    var pos = caret.get(contentEl);
+    var prev = domHelpers.prevInView(div);
+    var next = domHelpers.nextInView(div);
+  }
 
-  changes.push({prop:'dateUpdated', value: nowISO});
+  //list changes that get applied as dataset changes, if any?
+  //additional changes, e.g. displaying the new date in a dateBox
+  //position changes - what to do if div should no longer be there? (moved out of inbox, or is deleted) - move to holdingPen
+  if(changes.hasOwnProperty('parentId')){
+    var parentDiv = div.closest('[data-outline-component]').querySelector(`[data-id="${changes.parentId}"] .children`);
+    if(changes.parentId == 'DELETED' || changes.parentId == 'NEW') parentDiv = div.closest('[data-outline-component]').parentNode.querySelector('.holdingPen');
+    var precedingDiv = parentDiv.querySelector(`.note[data-id="${changes.precedingId}"]`);
+    var nextDiv = parentDiv.querySelector('.note');
+    if(precedingDiv) nextDiv = precedingDiv.nextSibling;
+    parentDiv.insertBefore(div, nextDiv);
+    if(initialDraw != true) domHelpers.flashHighlight(div);
+  }
+  else if(changes.hasOwnProperty('precedingId')){
 
-  //post the changes
-  ajax.post({id:id, changes:changes}, function(success){
-    console.log(`Successfully updated ${id} with ${JSON.stringify(changes)}`);
-  });
-
-  //TODO broadcast the changes via broadcastchannel api
-
-  //create a Change object to calculate the subsequent changes here, and draw them to the screen
-  var changeObject = new Change(id, changes);
-
-  console.log(JSON.stringify(changeObject));
-
-  drawUpdates(changeObject);
-
+  }
+  //the content itself
+  if(changes.hasOwnProperty('content')){
+    div.querySelector('.content').innerHTML = changes.content;
+  }
+  //reset the cursor
+  if(resetCursor){
+    if(isVisible(div)){
+      contentEl.focus();
+      caret.set(contentEl, pos);
+    }
+    else if(prev){
+      var content = prev.querySelector('.content');
+      content.focus();
+      caret.set(content, content.innerHTML.length);
+      //TODO find the next nearest element (previous or following) - actually maybe this shouldn't happen here? if we are doing
+      //something to an element which causes it to disappear (dragging and dropping), shouldn't focus pass to the element on the other side?
+      //so it should be handled by whatever is causing that change?
+      //or should be handled here depending on what's just happened
+      //here we can do a generic solution, then anything that needs to can override that, e.g. dragging and dropping
+    }
+    else if(next){
+      var content = next.querySelector('.content');
+      content.focus();
+      caret.set(content, content.innerHTML.length);
+    }
+  }
 }
 
-module.exports = new ChangeManager();
+},{"../utils/caret":31,"../utils/is-visible":32,"./dom-helpers":2}],10:[function(require,module,exports){
+//listen for these events
+var events = ['click', 'input', 'focusin', 'focusout', 'beforeunload', 'keydown', 'hashchange'];
 
-function drawUpdates(updates){
+var properCase = require('../utils/proper-case');
+var mapping = require('./mapping/mapping');
 
-  Object.keys(updates).forEach(function(id){
-    var note = model[id];
-    console.log('DRAWING UPDATE FOR '+id)
-    console.log(updates[id]);
-    var div = document.querySelector(`.note[data-id="${id}"]`) || holdingPen.querySelector(`.note[data-id="${id}"]`);
-    if(div == undefined) return;
-    var update = updates[id];
-    if(update.hasOwnProperty('parentId')){
-      console.log(id);
-      var content = div.querySelector('.content');
-      var caretPos = caret.get(content);
-      var parentDiv = document.querySelector(`.note[data-id="${update.parentId}"] .children`);
-      if(update.parentId == null) parentDiv = document.querySelector('#notes');
-      if(update.parentId == 'INBOX') parentDiv = document.querySelector('#inbox');
-      if(update.parentId == 'deleted') parentDiv = holdingPen;
-      console.log(parentDiv);
-      var precedingDiv = document.querySelector(`.note[data-id="${update.precedingId}"]`);
-      var nextDiv = parentDiv.querySelector('.note');
-      if(precedingDiv) nextDiv = precedingDiv.nextSibling;
+module.exports = function(model){
 
-      parentDiv.insertBefore(div, nextDiv);
+  //pass to relevant handlers
+  events.forEach(function(event){
+    window.addEventListener(event, function(e){
+      var t = e.target;
 
-      if(note.parentId != 'deleted'){
-        content.focus();
-        caret.set(content, caretPos);
+      //catch unloading
+      if(event == 'beforeunload' && mapping.window.beforeunload(e)){
+        e.preventDefault();
+        e.returnValue = '';
+        return false;
       }
-    }
-    if(update.hasOwnProperty('content')){
-      var el = div.querySelector('.content');
-      var pos;
-      if(el == document.activeElement) pos = caret.get(el);
-      el.innerHTML = update.content;
-      if(pos && el == document.activeElement) caret.set(el, pos);
-    }
-    if(update.hasOwnProperty('dueDate')){
-      var el = div.querySelector('.dueDate');
-      el.dataset.date = new Date(note.dueDate).getTime();
-      el.innerHTML = 'due '+friendlyDate(new Date(note.dueDate))+' <span class="clearDate">';
-    }
-    applyClasses.forEach(function(className){
-      if(update.hasOwnProperty(className)){
-        if(update[className] != false) div.classList.add(className)
-        else div.classList.remove(className);
-      }
+
+      var proper = properCase(event);
+      if(t instanceof HTMLElement && t.dataset.hasOwnProperty('eventsHandler'+proper) && mapping.hasOwnProperty(t.dataset['eventsHandler'+proper])) mapping[t.dataset['eventsHandler'+proper]][event](e, model);
+      else if(t instanceof HTMLElement && t.dataset.hasOwnProperty('eventsHandler') && mapping.hasOwnProperty(t.dataset.eventsHandler) && mapping[t.dataset.eventsHandler].hasOwnProperty(event)) mapping[t.dataset.eventsHandler][event](e, model);
     });
   });
+
 }
 
-},{"./shared/Change":11}],3:[function(require,module,exports){
-var search = require('./search');
-var noteEvents = require('./noteEvents');
-var processText = require('./shared/processText');
+},{"../utils/proper-case":33,"./mapping/mapping":17}],11:[function(require,module,exports){
+module.exports = {};
 
-window.addEventListener('click', function(e){
-  var dateDiv = document.querySelector('.dateBox');
-  if(dateDiv != null){
-    if(dateDiv.contains(e.target) == false) dateDiv.parentNode.removeChild(dateDiv);
+},{}],12:[function(require,module,exports){
+module.exports = function(element){
+  var note = element.closest('.note');
+  if(note != null){
+    return note.dataset.id;
   }
-  if(e.target.classList.contains('contentHolder')){
-    var content = e.target.querySelector('.content');
+  else return null;
+}
+
+},{}],13:[function(require,module,exports){
+var actions = require('./actions');
+
+module.exports = function(name, func){
+  actions[name] = func;
+}
+
+},{"./actions":11}],14:[function(require,module,exports){
+var Action = require('./new-action');
+var undoRedo = require('../../../operations-wrappers/undo-redo');
+var caret = require('../../../utils/caret');
+var getId = require('./get-id-from-dom-element');
+var throttle = require('./throttle');
+var generateId = require('../../../../shared/operations/generate-id');
+var domHelpers = require('../../../dom/dom-helpers');
+
+//operations which require to go through the operations-wrappers
+new Action('INDENT', function(e){
+  e.preventDefault();
+  var id = getId(e.target);
+  var prev = domHelpers.prevSibling(e.target, 'visible');
+  if(prev == null) return;
+  var prevId = prev.dataset.id;
+  var children = domHelpers.children(prev, 'visible');
+  var lastChildId = null;
+  if(children.length > 0) lastChildId = children[children.length-1].dataset.id;
+  undoRedo.new([{id:id, operation:'move', data:{parentId:prevId, precedingId:lastChildId}}]);
+  e.target.focus();
+  //figure out if it's possible to indent
+  //if so, send to the undo-redo stack whatever is necessary
+  //an object with id, {id, operation, values}
+  //the operations are basically... move, delete, set value (e.g. complete would just set the completed value to completed)
+  //what about new?
+  //what about stuff like backspacing and combining tow
+
+});
+
+new Action('OUTDENT', function(e){
+  e.preventDefault();
+  var id = getId(e.target);
+  var parent = model.names[model.names[id].parentId];
+  if(parent.id != 'OUTLINE' && parent.id != 'INBOX'){
+    parentParent = model.names[parent.parentId];
+    undoRedo.new([{id:id, operation:'move', data:{parentId:parentParent.id, precedingId:parent.id}}]);
+  }
+  e.target.focus();
+});
+
+new Action('REPOSITION_UP', function(e){
+  e.preventDefault();
+  var id = getId(e.target);
+  var parentId = model.names[id].parentId;
+  var prev = domHelpers.prevSibling(e.target, 'visible');
+  if(prev){
+    var prevInModel = model.names[prev.dataset.id];
+    undoRedo.new([{id:id, operation:'move', data:{parentId:parentId, precedingId:prevInModel.precedingId}}]);
+  }
+  e.target.focus();
+});
+
+new Action('REPOSITION_DOWN', function(e){
+  e.preventDefault();
+  var id = getId(e.target);
+  var parentId = model.names[id].parentId;
+  var next = domHelpers.nextSibling(e.target, 'visible');
+  if(next){
+    var nextInModel = model.names[next.dataset.id];
+    undoRedo.new([{id:id, operation:'move', data:{parentId:parentId, precedingId:nextInModel.id}}]);
+  }
+  e.target.focus();
+});
+
+new Action('ENTER_NEW_NOTE', function(e, model){
+  e.preventDefault();
+  var id = getId(e.target);
+  var newId = generateId();
+  //figure out what to do
+  var newParentId, newPrecedingId, newContent;
+  var operations = [];
+  var pos = caret.pos(e.target);
+  //note has content, we are in the middle or at the beginning (i.e. not at the end): create new note above with the content to the left of the cursor
+  if(pos != 'empty' && pos != 'end'){
+    if(pos == 'middle'){
+      newContent = e.target.innerText.substr(0, caret.get(e.target));
+      //also update content of current note to remove content to the left of cursor
+      operations.push({id:id, operation:'setProp', data:{prop:'content', value:e.target.innerText.substr(caret.get(e.target))}});
+    }
+    newParentId = model.names[id].parentId;
+    var prev = domHelpers.prevSibling(e.target, 'visible');
+    if(prev) newPrecedingId = prev.dataset.id;
+    else newPrecedingId = null;
+  }
+  //note has children (search only for VISIBLE children): create new note as first child of current note
+  else if(domHelpers.children(e.target, 'visible').length > 0){
+    newParentId = id;
+    newPrecedingId = null;
+  }
+  //otherwise, create a new note below
+  else{
+    newParentId = model.names[id].parentId;
+    newPrecedingId = id;
+  }
+
+  operations.push({id:newId, operation:'create', data:{parentId: newParentId, precedingId: newPrecedingId}});
+  if(newContent != undefined) operations.push({id:newId, operation:'setProp', data:{prop: 'content', value: newContent}});
+
+  undoRedo.new(operations);
+  //TODO figure out if ALWAYS to move cursor to new note?
+  waitTillDivDrawn(e.target.closest('.notesContainer'), `[data-id="${newId}"]>.topLine>.contentHolder>.content`, (content)=>{
+    content.focus();
+    caret.set(content, content.innerHTML.length);
+  });
+});
+
+function waitTillDivDrawn(obj, selector, callback){
+  requestAnimationFrame(()=>{
+    if(obj.querySelector(selector)) callback(obj.querySelector(selector));
+    else waitTillDivDrawn(obj, selector, callback);
+  });
+}
+
+
+new Action('TOGGLE_COMPLETE', function(e){
+  e.preventDefault();
+  var id = getId(e.target);
+  var newValue = true;
+  if(model.names[id].isComplete == true) newValue = false;
+  undoRedo.new([{id:id, operation:'setProp', data:{prop:'isComplete', value:newValue}}]);
+});
+
+new Action('BACKSPACE_DELETE_NOTE', function(e){
+  e.preventDefault();
+  var id = getId(e.target);
+  var prev = domHelpers.prevSibling(e.target);
+  var prevCousin = domHelpers.prevInView(e.target);
+  if(prev && prev.querySelector('.content').innerText == ''){
+    undoRedo.new([{id:prev.dataset.id, operation:'move', data:{parentId:'DELETED', precedingId:null}}]);
+    //NOW UNNECESSARY TODO REMOVE e.target.focus();
+  }
+  else if(e.target.innerText == ''){
+    undoRedo.new([{id:id, operation:'move', data:{parentId:'DELETED', precedingId:null}}]);
+    /*NOW UNNECESSARY TODO REMOVE
+    if(prev) prev.querySelector('.content').focus();
+    else if(prevCousin) prevCousin.querySelector('.content').focus();
+    else actions['NAV_FIRST_NOTE'](e);
+    */
+  }
+});
+
+new Action('TOGGLE_CHILDREN', function(e){
+  e.preventDefault();
+  var id = getId(e.target);
+  var newValue = true;
+  if(model.names[id].isCollapsed == true) newValue = false;
+  undoRedo.new([{id:id, operation:'setProp', data:{prop:'isCollapsed', value:newValue}}]);
+});
+
+new Action('UNDO', function(e){
+  console.log('UNDOING');
+  e.preventDefault();
+  undoRedo.undo();
+});
+
+new Action('REDO', function(e){
+  console.log('REDOING');
+  e.preventDefault();
+  undoRedo.redo();
+});
+
+new Action('INPUT_CONTENT', function(e){
+  throttle.input(getId(e.target), e.target.innerText);
+});
+
+new Action('FORCE_THROTTLE', function(e){
+  if(throttle.id) throttle.send();
+});
+
+},{"../../../../shared/operations/generate-id":36,"../../../dom/dom-helpers":2,"../../../operations-wrappers/undo-redo":28,"../../../utils/caret":31,"./get-id-from-dom-element":12,"./new-action":13,"./throttle":16}],15:[function(require,module,exports){
+var sync = require('../../../operations-wrappers/sync-stack');
+var domHelpers = require('../../../dom/dom-helpers');
+var caret = require('../../../utils/caret');
+var Action = require('./new-action');
+//superficial actions like changes to the display
+
+//operations which require to go through the operations-wrappers
+new Action('PANEL_SLIDE', function(e){
+  document.querySelector('#panelsHolder').className = e.target.dataset.panel;
+});
+
+
+new Action('NAV_UP', function(e){
+  var prev = domHelpers.prevInView(e.target);
+  if(prev) prev.querySelector('.content').focus();
+});
+new Action('NAV_UP_TO_END', function(e){
+  e.preventDefault();
+  var prev = domHelpers.prevInView(e.target);
+  if(prev){
+    var content = prev.querySelector('.content');
     content.focus();
     caret.set(content, content.innerText.length);
   }
-  if(e.target.classList.contains('dueDate')){
-    var date = new Date(parseInt(e.target.dataset.date));
-    dateBox.drawBox(date, e.target, date);
-  }
-  if(e.target.classList.contains('changeMonth')){
-    dateBox.updateBox(new Date(parseInt(e.target.dataset.date)), e.target.parentNode.parentNode.parentNode, new Date(parseInt(e.target.parentNode.parentNode.parentNode.parentNode.dataset.date)));
-  }
-  if(e.target.classList.contains('clearDate')){
-    var noteDiv = e.target.parentNode.parentNode.parentNode.parentNode;
-    changeManager.change(noteDiv.dataset.id, [{prop:'dueDate', value:null}]);
-  }
-  if(e.target.classList.contains('dateChoice')){
-    dateBox.updateSelected(e.target);
-    var noteDiv = e.target.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode;
-    changeManager.change(noteDiv.dataset.id, [{prop:'dueDate', value:new Date(parseInt(e.target.dataset.date)).toISOString()}]);
-  }
-  if(e.target.dataset.hasOwnProperty('hashTarget')){
-    //clicks to zoom from within the inbox are excluded, they are not supposed to work
-    if(document.querySelector('#inbox').contains(e.target) == false){
-      if(window.location.href.includes('#inbox') && e.target.parentNode.id != 'topbar') window.location.href = '#inbox'+e.target.dataset.hashTarget;
-      else if(window.location.href.includes('#todo') && e.target.parentNode.id != 'topbar' && e.target.dataset.hashTarget != '') window.location.href = '#todo'+e.target.dataset.hashTarget;
-      else window.location.href = '#'+e.target.dataset.hashTarget;
-    }
-  }
-  else if(e.target == document.querySelector('#toggleCompleted')){
-    document.querySelector('#holder').classList.toggle('showCompleted');
-  }
-  else if(e.target.classList.contains('toggle')){
-    noteEvents(e.target.parentNode.parentNode.parentNode, 'toggle', e);
+});
+
+new Action('NAV_DOWN', function(e){
+  var next = domHelpers.nextInView(e.target);
+  if(next) next.querySelector('.content').focus();
+});
+new Action('NAV_DOWN_TO_START', function(e){
+  e.preventDefault();
+  var next = domHelpers.nextInView(e.target);
+  if(next){
+    var content = next.querySelector('.content');
+    content.focus();
+    caret.set(content, 0);
   }
 });
 
-window.addEventListener('click', function(e){
-  if(e.target.classList.contains('tag')){
-    e.preventDefault();
-    e.stopPropagation();
-    var searchInput = document.querySelector('#searchBoxHolder input');
-    var tag = e.target.dataset.tag;
-    if(searchInput.value.includes(tag)) searchInput.value = searchInput.value.replace(tag, '');
-    else searchInput.value = searchInput.value.trim() + ' '+tag;
-    search.apply();
-    document.querySelector('#searchBoxHolder input').focus();
-  }
-}, true);
-
-window.addEventListener('input', function(e){
-  if(e.target.classList.contains('content')){
-    if(document.querySelector('#searchBoxHolder input').value.trim() != '') search.apply();
-    processContentInputSnap(e.target);
-    throttle.input(e.target.parentNode.parentNode.parentNode.dataset.id, e.target.innerText);
-  }
-  else if(e.target.parentNode.id == 'searchBoxHolder'){
-    search.apply();
-  }
+new Action('NAV_FIRST_NOTE', function(e){
+  var first = domHelpers.firstInView(e.target);
+  if(first) first.querySelector('.content').focus();
 });
 
-window.addEventListener('focusin', function(e){
-  if(e.target.classList.contains('content')){
-    //TODO get the location of the caret and maintain it
-    e.target.innerHTML = model[e.target.parentNode.parentNode.parentNode.dataset.id].content;
-  }
-}, true);
-
-window.addEventListener('focusout', function(e){
-  if(e.target != window && e.target.classList.contains('content')){
-    if(throttle.id) throttle.send();
-    e.target.innerHTML = processText('blur', e.target.innerText, e.target.parentNode.parentNode.parentNode.dataset.id);
-  }
+new Action('NAV_LAST_NOTE', function(e){
+  var last = domHelpers.lastInView(e.target);
+  if(last) last.querySelector('.content').focus();
 });
 
-window.addEventListener('beforeunload', function(e){
-  if(throttle.content === undefined) return "Do you want to leave this site?\n\nChanges that you made may not be saved.";
-  else return null;
-});
-
-window.addEventListener('keydown', function(e){
-  if(e.keyCode == 36 && e.ctrlKey){
-    var noteEls = Array.prototype.slice.call(document.querySelectorAll(`.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
-    noteEls[0].querySelector('.content').focus();
-  }
-  if(e.keyCode == 35 && e.ctrlKey){
-    var noteEls = Array.prototype.slice.call(document.querySelectorAll(`.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
-    var lastEl = noteEls[noteEls.length-1].querySelector('.content');
-    lastEl.focus();
-  }
-
-  if(e.target.classList.contains('content')){
-    var noteDiv = e.target.parentNode.parentNode.parentNode;
-    var content = noteDiv.querySelector('.content');
-    if(e.keyCode == 13 && e.ctrlKey) noteEvents(noteDiv, 'toggleComplete', e);
-    if(e.keyCode == 38 && e.ctrlKey == false && e.shiftKey == false) noteEvents(noteDiv, 'navUp', e);
-    if(e.keyCode == 40 && e.ctrlKey == false && e.shiftKey == false) noteEvents(noteDiv, 'navDown', e);
-    if(e.keyCode == 37 && e.ctrlKey == false && e.shiftKey == false && ['start','empty'].includes(caret.pos(content))) noteEvents(noteDiv, 'navUpEnd', e);
-    if(e.keyCode == 39 && e.ctrlKey == false && e.shiftKey == false && ['end','empty'].includes(caret.pos(content))) noteEvents(noteDiv, 'navDownStart', e);
-    if(e.keyCode == 8 && caret.get(e.target) == 0 && window.getSelection().toString() == '') noteEvents(noteDiv, 'delete', e);
-    if(e.keyCode == 13 && e.ctrlKey == false) noteEvents(noteDiv, 'new', e);
-    if(e.keyCode == 9 && e.shiftKey) noteEvents(noteDiv, 'outdent', e);
-    if(e.keyCode == 9 && e.shiftKey == false) noteEvents(noteDiv, 'indent', e);
-    if(e.keyCode == 38 && e.ctrlKey) noteEvents(noteDiv, 'repositionUp', e);
-    if(e.keyCode == 40 && e.ctrlKey) noteEvents(noteDiv, 'repositionDown', e);
-  }
-});
-
-
-window.addEventListener('hashchange', function(e){
-  console.log('HASSSH THAT WEVE GONE TO')
-  console.log(location.hash)
-  var comps = location.hash.match(/^#?([A-z0-9]*)\/?([A-z0-9]*)?/);
-  var hashHead = comps[1];
-  var id = comps[2];
-  console.log('HASHHEAD')
-  console.log(hashHead)
-
-  document.querySelector('#breadcrumbs').innerHTML = '';
-  if(document.querySelector('.zoom')) document.querySelector('.zoom').classList.remove('zoom');
-
-  if(id != '' && model[id]){
-    document.querySelector('body').classList.add('zooming');
-    document.querySelector(`.note[data-id="${id}"]`).classList.add('zoom');
-    if(hashHead == '') document.querySelector('#outlineIcon').dataset.hashTarget = '/'+id;
-    if(hashHead == 'inbox') document.querySelector('#inboxIcon').dataset.hashTarget = 'inbox/'+id;
-    if(hashHead == 'todo') document.querySelector('#todoIcon').dataset.hashTarget = 'todo/'+id;
-    //add breadcrumbs
-    var crumb = model[id];
-    do{
-      console.log(id)
-      console.log('DOING BREADCRUMBS')
-      var span = document.createElement('span');
-      if(crumb.content.length > 30) span.innerHTML = crumb.content.substr(0, 30).trim()+' ...';
-      else span.innerHTML = crumb.content;
-      span.dataset.hashTarget = '/'+crumb.id;
-      document.querySelector('#breadcrumbs').prepend(span);
-      crumb = modelRaw.find(x => x.id == crumb.parentId);
-    } while(crumb);
-  }
-  else if(hashHead != 'todo'){
-    document.querySelector('body').classList.remove('zooming');
-    document.querySelector('#breadcrumbs').innerHTML = '';
-    if(hashHead == '') document.querySelector('#outlineIcon').dataset.hashTarget = '';
-    if(hashHead == 'inbox') document.querySelector('#inboxIcon').dataset.hashTarget = 'inbox';
-  }
-  //todo view
-  else if(id){
-    var scheduleDate = id;
-    document.querySelector('#todoIcon').dataset.hashTarget = 'todo/'+scheduleDate;
-    document.querySelector(`.tab[data-date="${scheduleDate}"] input`).checked = true;
-  }
-
-  //display the appropriate components
-  switch(hashHead){
-    case "inbox":
-        document.querySelector('body').dataset.display = 'inbox';
-    break;
-    case "todo":
-        document.querySelector('body').dataset.display = 'todo';
-    break;
-    case "":
-      document.querySelector('body').dataset.display = 'outline';
-    break;
-  }
-
+new Action('ALERT', function(e){
 
 });
 
-function processContentInputSnap(el){
-  var pos;
-  var length = el.innerText.length;
-  if(el == document.activeElement) pos = caret.get(el);
-  el.innerHTML = processText('snap', el.innerText, el.parentNode.parentNode.parentNode.dataset.id);
-  var newLength = el.innerText.length;
-  if(pos && el == document.activeElement) caret.set(el, pos-(length-newLength));
+new Action('BEFORE_UNLOAD', function(e){
+  return sync.isClear();
+});
+
+},{"../../../dom/dom-helpers":2,"../../../operations-wrappers/sync-stack":27,"../../../utils/caret":31,"./new-action":13}],16:[function(require,module,exports){
+var undoRedo = require('../../../operations-wrappers/undo-redo');
+
+var timeoutSeconds = 1;
+
+function Throttle(seconds){
+  this.seconds = seconds;
 }
 
-},{"./noteEvents":9,"./search":10,"./shared/processText":12}],4:[function(require,module,exports){
+Throttle.prototype.input = function(id, content){
+  var self = this;
+  self.clear();
+  self.id = id;
+  self.content = content;
+  self.countdown = window.setTimeout(function(){self.send();}, self.seconds * 1000);
+}
+
+Throttle.prototype.send = function(){
+  var self = this;
+  //only make a change if there's really something to change
+  if(self.content != model.names[self.id].content) undoRedo.new([{id:self.id, operation:'setProp', data:{prop:'content', value:self.content}}]);
+  self.clear();
+}
+
+Throttle.prototype.clear = function(){
+  var self = this;
+  if(self.countdown) window.clearTimeout(self.countdown);
+  self.id = undefined;
+  self.content = undefined;
+}
+
+module.exports = new Throttle(timeoutSeconds);
+
+},{"../../../operations-wrappers/undo-redo":28}],17:[function(require,module,exports){
+module.exports = mapping = [];
+
+Mapping = function(name, eventsToActions){
+  mapping[name] = {};
+  Object.getOwnPropertyNames(eventsToActions).forEach(function(prop){
+    if(typeof eventsToActions[prop] == "string"){
+      mapping[name][prop] = function(e, model){
+        return actions[eventsToActions[prop]](e, model);
+      }
+    }
+    else if(typeof eventsToActions[prop] == "function"){
+      mapping[name][prop] = eventsToActions[prop];
+    }
+  });
+}
+
+//require all specific mapping files here
+require('./specifics/note-content');
+require('./specifics/toggle');
+require('./specifics/panel');
+require('./specifics/window');
+require('./specifics/body');
+
+require('./actions/operation-actions');
+require('./actions/superficial-actions');
+actions = require('./actions/actions');
+
+window.mapping = mapping;
+
+},{"./actions/actions":11,"./actions/operation-actions":14,"./actions/superficial-actions":15,"./specifics/body":18,"./specifics/note-content":19,"./specifics/panel":20,"./specifics/toggle":21,"./specifics/window":22}],18:[function(require,module,exports){
+new Mapping('body', {
+  'keydown': function(e){
+    console.log(e.target);
+    console.log(e);
+    switch(e.keyCode){
+      //ctrl+z
+      case 90:
+        if(e.ctrlKey){
+          actions['UNDO'](e, model);
+        }
+      break;
+      //ctrl+y
+      case 89:
+        if(e.ctrlKey){
+          actions['REDO'](e, model);
+        }
+      break;
+      //ctrl+s
+      case 83:
+        if(e.ctrlKey){
+          //just do nothing to prevent save window
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      break;
+    }
+  }
+});
+
+},{}],19:[function(require,module,exports){
+var caret = require('../../../utils/caret');
+
+new Mapping('note-content', {
+  'click': 'ALERT',
+  'keydown': function(e, model){
+    switch(e.keyCode){
+      //enter
+      case 13:
+        if(e.ctrlKey) actions['TOGGLE_COMPLETE'](e, model);
+        else actions['ENTER_NEW_NOTE'](e, model);
+      break;
+      //backspace
+      case 8:
+        if(e.ctrlKey==false && e.shiftKey==false && caret.get(e.target) == 0 && window.getSelection().isCollapsed) actions['BACKSPACE_DELETE_NOTE'](e, model);
+      break;
+      //tab
+      case 9:
+        if(e.shiftKey) actions['OUTDENT'](e, model);
+        else actions['INDENT'](e, model);
+      break;
+      //up
+      case 38:
+        if(e.ctrlKey) actions['REPOSITION_UP'](e, model);
+        else actions['NAV_UP'](e, model);
+      break;
+      //down
+      case 40:
+        if(e.ctrlKey) actions['REPOSITION_DOWN'](e, model);
+        else actions['NAV_DOWN'](e, model);
+      break;
+      //left
+      case 37:
+        if(e.ctrlKey == false && e.shiftKey == false && caret.pos(e.target) == 'start') actions['NAV_UP_TO_END'](e, model);
+      break;
+      //right
+      case 39:
+        if(e.ctrlKey == false && e.shiftKey == false && caret.pos(e.target) == 'end') actions['NAV_DOWN_TO_START'](e, model);
+      break;
+      //ctrl+home
+      case 36:
+        if(e.ctrlKey) actions['NAV_FIRST_NOTE'](e, model);
+      break;
+      //ctrl+end
+      case 35:
+        if(e.ctrlKey) actions['NAV_LAST_NOTE'](e, model);
+      break;
+      //Using default to redirect any keystrokes not caught to body listener
+      default:
+        mapping['body']['keydown'](e, model);
+      break;
+    }
+  },
+  'input': 'INPUT_CONTENT',
+  'focusout': 'FORCE_THROTTLE'
+});
+
+},{"../../../utils/caret":31}],20:[function(require,module,exports){
+new Mapping('panel', {
+  'click': 'PANEL_SLIDE'
+});
+
+},{}],21:[function(require,module,exports){
+new Mapping('toggle', {
+  'click': 'TOGGLE_CHILDREN'
+});
+
+},{}],22:[function(require,module,exports){
+var domHelpers = require('../../../dom/dom-helpers');
+
+new Mapping('window', {
+  'beforeunload': 'BEFORE_UNLOAD',
+  'keydown': function(e){
+    switch(e.keyCode){
+      case 36:
+        if(e.ctrlKey){
+          //TODO figure out a way to choose which panel to select, if no note currently has cursor
+          //TODO this event should go on the holder itself
+        }
+      break;
+      case 90:
+        if(e.ctrlKey){
+          actions['UNDO'](e, model);
+        }
+      case 89:
+        if(e.ctrlKey){
+          actions['REDO'](e, model);
+        }
+      break;
+    }
+  }
+});
+
+},{"../../../dom/dom-helpers":2}],23:[function(require,module,exports){
+var ajax = require('../utils/ajax');
+
+module.exports = model = {};
+
+model.initialise = function(callback){
+
+  ajax.get(function(data){
+    model.raw = data.model;
+    model.names = {};
+    model.raw.forEach(function(note){
+      model.names[note.id] = note;
+    });
+    model.currentChange = data.currentChange;
+
+    callback(model);
+
+  });
+}
+
+model.update = function(newModel){
+  model.raw = newModel.raw;
+  model.names = {};
+  model.raw.forEach(function(note){
+    model.names[note.id] = note;
+  });
+}
+
+},{"../utils/ajax":30}],24:[function(require,module,exports){
+var Tree = require('../../shared/operations/Tree');
+
+module.exports = changeHistory = {};
+
+changeHistory.setOffset = function(lastConfirmed){
+  this.offset = lastConfirmed;
+  this.setLastConfirmed(lastConfirmed);
+}
+
+changeHistory.stack = [];
+
+changeHistory.add = function(operations, rollbackChanges, index=this.stack.length+1){
+  this.stack.splice(index, 0, {operations:operations, rollbackChanges:rollbackChanges});
+}
+
+changeHistory.updateRollbackChanges = function(rollbackChanges, index){
+  this.stack[index].rollbackChanges = rollbackChanges;
+}
+
+changeHistory.setLastConfirmed = function(lastConfirmed){
+  this.lastConfirmed = lastConfirmed;
+}
+
+changeHistory.getLastConfirmed = function(){
+  return this.lastConfirmed;
+}
+
+changeHistory.rollback = function(index){
+  if(this.stack.length == 0) return;
+  index = index - this.offset;
+  var tree = new Tree(model);
+  for(i = this.stack.length-1; i--; i>=index){
+    tree.apply(this.stack[i].rollbackChanges);
+  }
+  model.raw = tree.model.raw;
+  model.names = tree.model.names;
+}
+
+},{"../../shared/operations/Tree":34}],25:[function(require,module,exports){
+var model = require('../model/model');
+
+module.exports = function(actions){
+  return actions.map(x=> getInverse(x));
+}
+
+function getInverse(action){
+  /*inverse of set, is set the value to its current value
+  of move is move the item to where it is now
+  of delete, is move the item to where it is now (because delete is the same as move)
+  of new is ... move the item to 'uncreated'. then when creating items, just need to remember to check in 'uncreated' before creating if necessary
+  */
+  switch(action.operation){
+    case 'setProp':
+      var oldValue = null;
+      if(model.names[action.id]) oldValue = model.names[action.id][action.data.prop];
+      if(oldValue == undefined) oldValue = null;
+      return {id:action.id, operation: 'setProp', data:{prop: action.data.prop, value: oldValue}};
+    break;
+    //these two are the same, so nothing for move and no break statement
+    case 'move':
+    case 'delete':
+      return {id:action.id, operation: 'move', data:{parentId: model.names[action.id].parentId, precedingId: model.names[action.id].precedingId}};
+    break;
+    case 'create':
+      return {id:action.id, operation: 'move', data:{parentId: 'NEW', precedingId: null}};
+    break;
+  }
+}
+
+},{"../model/model":23}],26:[function(require,module,exports){
+//carry out the operation on the current model, update the results, and draw the results
+var model = require('../model/model');
+var Tree = require('../../shared/operations/Tree');
+var getDeepInverse = require('../../shared/operations/get-deep-inverse');
+var drawChanges = require('../dom/draw-changes');
+
+var tempOrderNotes = require('../temp-order-notes');
+
+module.exports = function(operations){
+
+  var changes = {};
+  var tree = new Tree(model);
+  operations.forEach(function(operation){
+    changes = tree[operation.operation](operation.id, operation.data, changes);
+    //apply the changes to the temporary model created inside the tree
+    tree.apply(changes);
+  });
+
+  var deepInverse = getDeepInverse(changes, model);
+
+  //apply the changes to the real model
+  model.update(tree.model);
+
+  //draw the changes to the DOM
+  drawChanges(changes);
+
+  return deepInverse;
+}
+
+},{"../../shared/operations/Tree":34,"../../shared/operations/get-deep-inverse":37,"../dom/draw-changes":3,"../model/model":23,"../temp-order-notes":29}],27:[function(require,module,exports){
+var pollSeconds = 5;
+
+var operate = require('./operate');
+var changeHistory = require('./change-history');
+var ajax = require('../utils/ajax');
+
+module.exports = sync = {};
+
+sync.stack = [];
+sync.syncing = false;
+
+sync.add = function(operations){
+  //apply the operations and get rollback changes
+  var rollbackChanges = operate(operations);
+  this.stack.push({operations:operations, rollbackChanges:rollbackChanges, status:'NEW'});
+  changeHistory.add(operations, rollbackChanges);
+  //whenever a new change is received, sync - for now. later could add throttling to this
+  //in any case, below we set a 10-second regular sync
+  //this.sync();
+}
+
+sync.sync = function(){
+  //do not try to sync while another sync is in progress
+  if(sync.syncing) return;
+  sync.syncing = true;
+  if(sync.stack.some(x=> x.status == 'NEW')) document.querySelector('#saveIndicator').classList.add('show');
+  //set all items to pending status
+  sync.stack = sync.stack.map(x=> {if(x.status == 'NEW') x.status = 'PENDING'; return x;});
+  //send also the change id of the latest change that has been confirmed as in the right place by the server
+  var lastConfirmed = changeHistory.getLastConfirmed();
+  var data = {updates:sync.stack, lastConfirmed:lastConfirmed};
+  //send the data
+  ajax.post(data, function(results){
+    var pendings = sync.stack.filter(x=> x.status == 'PENDING');
+    if(results.hasOwnProperty('missingChanges')){
+      //ask changeHistory to rollback to the index we sent
+      changeHistory.rollback(lastConfirmed);
+      //apply the missing changes, and add each one to the changeHistory
+      results.missingChanges.forEach(function(missingChange, i){
+        rollbackChanges = operate(JSON.parse(missingChange.operations));
+        changeHistory.add(missingChange.operations, rollbackChanges, lastConfirmed+i);
+      });
+      //reapply the pendings, and overwrite their rollbackChanges in the changeHistory
+      pendings.forEach(function(pending, i){
+        rollbackChanges = operate(pending.operations);
+        changeHistory.updateRollbackChanges(rollbackChanges, results.missingChanges.length+i);
+      });
+      changeHistory.setLastConfirmed(changeHistory.getLastConfirmed() + results.missingChanges.length + pendings.length);
+    }
+    //remember to increase the changeHistory lastConfirmed by the number of pendings that were sent
+    //and for now, that were ASSUMED to have been dealt with
+    //TODO When dealing with below (fact that all might not be complete), remember to change this bit too
+    else{
+      changeHistory.setLastConfirmed(changeHistory.getLastConfirmed() + pendings.length);
+    }
+
+    //TODO IMPORTANT for above and below: deal with the fact that some pendings might not be complete. only process up to last complete pending. others stay in error state
+
+    //process the result of each update
+    results.updates.forEach((result, i)=> {
+      pendings[i].status = result.status;
+    });
+    sync.stack = sync.stack.filter(x=> x.status != 'COMPLETE');
+    sync.syncing = false;
+    document.querySelector('#saveIndicator').classList.remove('show');
+  });
+}
+
+sync.isClear = function(){
+  return sync.stack.some(x => x.status == 'NEW' || x.status == 'ERROR');
+}
+
+window.setInterval(sync.sync, pollSeconds * 1000);
+
+window.sync = sync;
+
+},{"../utils/ajax":30,"./change-history":24,"./operate":26}],28:[function(require,module,exports){
+var syncStack = require('./sync-stack');
+var getInverse = require('./get-inverse');
+
+module.exports = undoRedo = {};
+
+undoRedo.stack = [];
+undoRedo.index = 0;
+
+//add a new action to the stack
+undoRedo.new = function(action){
+  //remove any undone actions from the top of the stack - they get replaced by the new one
+  this.stack.splice(0, this.index, {action:action, inverse:getInverse(action)});
+  this.index = 0;
+  //execute the action
+  this.exec(this.index, 'action');
+}
+//execute an action
+undoRedo.exec = function(index, direction){
+  syncStack.add(this.stack[index][direction]);
+}
+//redo and step towards zero
+undoRedo.redo = function(){
+  if(this.stack[this.index-1]){
+    this.exec(this.index-1, 'action');
+    this.index --;
+  }
+}
+//undo and step away from zero (even if there is no element in the next position)
+undoRedo.undo = function(){
+  if(this.stack[this.index]){
+    this.exec(this.index, 'inverse');
+    this.index ++;
+  }
+}
+
+window.undoRedo = undoRedo;
+
+},{"./get-inverse":25,"./sync-stack":27}],29:[function(require,module,exports){
+module.exports = function(childrenRaw){
+  var children = [];
+  var precedingId = null;
+  for(var i = 0; i<childrenRaw.length; i++){
+    var nextChild = childrenRaw.find(x => x.precedingId == precedingId);
+    children.push(nextChild);
+    precedingId = nextChild.id;
+  }
+  return children;
+}
+
+},{}],30:[function(require,module,exports){
 function ajax(method, callback, data){
 
   if(data == null) data = {};
@@ -388,12 +1092,10 @@ function ajax(method, callback, data){
   xhr.setRequestHeader('Content-type', 'application/json');
   xhr.onreadystatechange = function () {
       if (xhr.readyState === 4 && xhr.status === 200) {
-          console.log(xhr.responseText);
           var json = JSON.parse(xhr.responseText);
           callback(json);
       }
   };
-  if(data) console.log(data);
   if(method != 'GET') xhr.send(JSON.stringify(data));
   else xhr.send();
 }
@@ -417,7 +1119,7 @@ module.exports = {
   put
 }
 
-},{}],5:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 module.exports = {
   get,
   set,
@@ -485,923 +1187,184 @@ function caretAtEnd(div){
   else return false;
 }
 
-},{}],6:[function(require,module,exports){
-module.exports = {drawBox, updateBox, updateSelected, test};
-
-function drawBox(date, target, selected){
-  if(selected) selected.setHours(1,0,0,0);
-  else selected = new Date(0);
-
-  var div = document.createElement('div');
-  div.classList.add('dateBox');
-
-  updateBox(date, div, selected);
-
-  target.appendChild(div);
-}
-
-function updateBox(date, div, selected){
-  console.log(date);
-  console.log('SELECTED')
-  console.log(selected);
-  if(selected == null){
-    var selectedEl = div.querySelector('.selected');
-    if(selectedEl) selected = new Date(parseInt(selectedEl.dataset.date));
-    else selected = new Date(0);
-  }
-  console.log(selected);
-  selected.setHours(1,0,0,0);
-
-  var year = date.getFullYear();
-  var month = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][date.getMonth()];
-  var days = ['M','T','W','H','F','S','U'];
-  var today = new Date();
-  today.setHours(1,0,0,0);
-  var endDate = getEndDate(date);
-  var startDate = getStartDate(date);
-  console.log('START DATE')
-  console.log(startDate);
-  var dates = [];
-  for(true; startDate<=endDate; startDate.setDate(startDate.getDate() +1)){
-    console.log(startDate);
-    console.log(selected);
-    console.log(startDate.getTime());
-    console.log(selected.getTime());
-    if(startDate.getTime() == selected.getTime()) console.log('MATC!!!!')
-    dates.push(new Date(startDate.getTime()));
-  }
-  console.log(dates);
-  var prevMonthDate = getFirstDate(date);
-  prevMonthDate.setDate(prevMonthDate.getDate() - 1);
-  var nextMonthDate = getLastDate(date);
-  nextMonthDate.setDate(nextMonthDate.getDate() + 1);
-
-  console.log(div);
-
-  div.innerHTML = `
-  <div class='shell'>
-    <div class='monthYear'><span class='changeMonth' data-date='${prevMonthDate.getTime()}'>&#8592;</span>${month} ${year}<span class='changeMonth' data-date='${nextMonthDate.getTime()}'>&#8594;</span></div>
-    <div class='days'>
-      ${days.map(x=> `<div>${x}</div>`).join('')}
-    </div>
-    <div class='dates'>
-      ${dates.map((x,i) => `${i%7 == 0 ? `<div class="row">` : ''}<div data-date="${x.getTime()}" class="dateChoice ${x.getMonth() == date.getMonth() ? '' : ' otherMonth'}${(x.getTime() == today.getTime()) ? ' today' : ''}${(x.getTime() == selected.getTime()) ? ' selected' : ''}">${x.getDate()}</div>${i%7 == 6 ? `</div>` : ''}`).join('')}
-    </div>
-  </div>
-  `;
-}
-
-function updateSelected(el){
-  var selected = el.parentNode.parentNode.querySelector('.selected')
-  if(selected) selected.classList.remove('selected');
-  el.classList.add('selected');
-}
-
-function getFirstDate(date){
-  var tempDate = new Date(date.getTime());
-  tempDate.setDate(1);
-  tempDate.setHours(1,0,0,0);
-  return tempDate;
-}
-
-function getLastDate(date){
-  var tempDate = new Date(date.getTime());
-  tempDate.setDate(1);
-  tempDate.setMonth(tempDate.getMonth()+1);
-  tempDate.setDate(0);
-  tempDate.setHours(1,0,0,0);
-  return tempDate;
-}
-
-function getStartDate(date){
-  var firstDate = getFirstDate(date);
-  var firstDay = firstDate.getDay();
-  var startDate = new Date(firstDate.getTime());
-  startDate.setDate(startDate.getDate() - firstDay + 1);
-  return startDate;
-}
-
-function getEndDate(date){
-  var lastDate = getLastDate(date);
-  var lastDay = lastDate.getDay();
-  var endDate = new Date(lastDate.getTime());
-  console.log(endDate);
-  var toAdd = 7 - lastDay;
-  endDate.setDate(endDate.getDate() + (toAdd == 7 ? 0 : toAdd));
-  return endDate;
-}
-
-function test(){
-  var tempDate = new Date();
-  tempDate.setDate(tempDate.getDate() + 4)
-  window.setTimeout(function(){drawBox(new Date(), document.querySelector('.contentHolder'), tempDate)}, 1000);
-}
-
-},{}],7:[function(require,module,exports){
-window.addEventListener('dragstart', function(e){
-  console.log(e);
-  document.body.classList.add('dragDropHappening');
-  e.target.parentNode.parentNode.parentNode.classList.add('dragOrigin');
-});
-
-window.addEventListener('dragend', function(e){
-  document.body.classList.remove('dragDropHappening');
-  var origin = e.target.parentNode.parentNode.parentNode;
-  origin.classList.remove('dragOrigin');
-  console.log(origin);
-  var target = document.querySelector('.hover');
-  removeHovers();
-  var note = model[origin.dataset.id];
-  var targetNoteDiv = target.parentNode.parentNode.parentNode;
-  console.log('INTERESTIG')
-  console.log(target);
-  console.log(targetNoteDiv);
-  if(target.classList.contains('dragDropTop')){
-    var newPrev = targetNoteDiv.previousElementSibling;
-    var newPrevId = null;
-    if(newPrev) newPrevId = newPrev.dataset.id;
-    var newParent = targetNoteDiv.parentNode;
-    if(newParent.classList.contains('children')) newParent = newParent.parentNode;
-    var newParentId;
-    if(newParent.dataset.id) newParentId = newParent.dataset.id;
-    else if(newParent.id == 'notes') newParentId = null;
-    else if(newParent.id == 'inbox') newParentId = 'INBOX';
-    changeManager.change(note.id, [{prop:"parentId", value:newParentId}, {prop:"precedingId", value:newPrevId}]);
-  }
-  else if(target.classList.contains('dragDropBottom')){
-    var newPrevId = targetNoteDiv.dataset.id;
-    var newParent = targetNoteDiv.parentNode.parentNode;
-    var newParentId;
-    console.log(newParent);
-    if(newParent.dataset.id) newParentId = newParent.dataset.id;
-    else if(newParent.id == 'notes') newParentId = null;
-    else if(newParent.id == 'inbox') newParentId = 'INBOX';
-    changeManager.change(note.id, [{prop:"parentId", value:newParentId}, {prop:"precedingId", value:newPrevId}]);
-  }
-  else if(target.classList.contains('bullet')){
-    changeManager.change(note.id, [{prop:"parentId", value:targetNoteDiv.dataset.id}, {prop:"precedingId", value:null}]);
-  }
-});
-
-window.addEventListener('dragenter', function(e){
-  var el = e.target;
-  console.log(el);
-  var origin = document.querySelector('.dragOrigin');
-  console.log(origin);
-  if((el.classList.contains('dragDropTop') || el.classList.contains('dragDropBottom')) && origin.contains(el) == false){
-    removeHovers();
-    el.classList.add('hover');
-  }
-  else if(origin.contains(el) && origin){
-    removeHovers();
-    origin.querySelector('.dragDropTop').classList.add('hover');
-  }
-  else if(el.classList.contains('bullet') && (el.classList.contains('isParent') == false || (el.classList.contains('isParent') && el.classList.contains('isCollapsed'))) && origin.contains(el) == false && el != origin){
-    removeHovers();
-    el.classList.add('hover');
-  }
-});
-
-function removeHovers(){
-  [].forEach.call(document.querySelectorAll('.hover'), function(hoverEl){
-    hoverEl.classList.remove('hover');
-  });
-}
-
-},{}],8:[function(require,module,exports){
-module.exports = function(date){
-  var days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-  var today = new Date();
-  today.setHours(1,0,0,0);
-  date.setHours(1,0,0,0);
-  var fac = 86400000;
-  var diff = Math.floor((date - today) / fac);
-  if(diff == 0) return 'today';
-  else if(diff == 1) return 'tomorrow';
-  else if(diff == -1) return 'yesterday';
-  else if(diff < -1){
-    if(diff > -14){
-      return -diff+' days ago';
+},{}],32:[function(require,module,exports){
+module.exports = function(el){
+  if(el.closest('.holdingPen') == null){
+    //make sure it's not a hidden child of a collapsed element
+    if(el.closest('.isCollapsed') == null){
+      //TODO replace || 1 with a test of if the current component is displaying completed elements or not
+      if(el.classList.contains('.isComplete') == false || 1) return true;
     }
-    else return Math.floor(-diff / 7)+' weeks ago';
+    else return false;
+  }
+  else return false;
+}
+
+},{}],33:[function(require,module,exports){
+module.exports = function(string){
+  return string[0].toUpperCase()+string.substr(1).toLowerCase();
+}
+
+},{}],34:[function(require,module,exports){
+const defaultNoteObject = require('./default-note-object');
+
+const waterfalls = [
+  {triggerProp: 'example', waterfallProp: 'example'}
+];
+
+const Tree = function(model){
+  //make a deep copy of the model in order to not mutate it when using .apply()
+  this.model = {};
+  this.model.raw = JSON.parse(JSON.stringify(model.raw));
+  this.model.names = {};
+  var self = this;
+  this.model.raw.forEach(function(note){
+    self.model.names[note.id] = note;
+  });
+};
+
+//OPERATIONS
+Tree.prototype.setProp = function(id, data, changes = {}){
+  if(!changes[id]) changes[id] = {};
+  changes[id][data.prop] = data.value;
+  return changes;
+}
+
+breakHere = function(){
+  1;
+  return 1;
+}
+
+Tree.prototype.move = function(id, data, changes = {}){
+  var obj = this.getObj(id);
+  changes = this.remove(obj, changes);
+  changes = this.insert(obj, data.parentId, data.precedingId, changes);
+  breakHere();
+  return changes;
+}
+
+Tree.prototype.delete = function(id, data, changes = {}){
+  var obj = this.getObj(id);
+  changes = this.remove(obj, changes);
+  changes = this.insert(obj, 'DELETED', null, changes);
+  return changes;
+}
+
+Tree.prototype.create = function(id, data, changes = {}){
+  //check if already exists in model
+  if(this.model.names[id]){
+    var obj = this.getObj(id);
   }
   else{
-    if(diff >= 14) return 'in '+Math.round(diff / 7)+' weeks';
-    else if((diff + day(today)) <= 6) return days[day(today, diff)];
-    else if((diff + day(today)) <= 13) return 'next '+days[day(today, diff)];
-    else return 'in '+diff+' days';
+    noteObject = defaultNoteObject(id);
+    this.model.raw.push(noteObject);
+    this.model.names[id] = noteObject;
   }
+  changes = this.move(id, data, changes);
+  return changes;
 }
 
-function day(date, mod){
-  if(!mod) mod = 0;
-  date.setDate(date.getDate() + mod);
-  var day = date.getDay();
-  if(day == 0) day = 6;
-  else day = day-1;
-  return day;
+//NAVIGATION
+Tree.prototype.next = function(obj){
+  return this.model.raw.find(x=> x.parentId == obj.parentId && x.precedingId == obj.id);
 }
 
-},{}],9:[function(require,module,exports){
-module.exports = function(noteDiv, action, e){
-  console.log(e);
-  e.preventDefault();
-  var note = model[noteDiv.dataset.id];
-  var content = noteDiv.querySelector('.content');
-  switch(action){
+Tree.prototype.prev = function(obj){
+  return this.model.raw.find(x=> x.parentId == obj.parentId && x.id == obj.precedingId);
+}
 
-    case 'toggle':
-      var makeItCollapsed = null;
-      if(note.isCollapsed) makeItCollapsed = false;
-      else makeItCollapsed = true;
-      changeManager.change(note.id, [{prop:"isCollapsed", value:makeItCollapsed}]);
-    break;
+Tree.prototype.parent = function(obj){
+  return this.model.raw.find(x=> x.id == obj.parentId);
+}
 
-    case 'toggleComplete':
-      var prevEl = getPreviousNoteElement(noteDiv);
-      changeManager.change(note.id, [{prop:"isComplete", value:(note.isComplete ? false : true)}]);
-      if(document.querySelector('.showCompleted')) break;
-      if(prevEl) prevEl.querySelector('.content').focus();
-      else{
-        var nextEl = getNextNoteElement(noteDiv);
-        if(nextEl) nextEl.querySelector('.content').focus();
-        else{
-          var prevEl = getPrevNoteElement(noteDiv);
-          if(prevEl) prevEl.querySelector('.content').focus();
-        }
-      }
-    break;
+Tree.prototype.children = function(obj){
+  return this.order(this.model.raw.filter(x=> x.parentId == obj.id));
+}
 
-    case 'navUp':
-      var prevEl = getPreviousNoteElement(noteDiv);
-      if(prevEl) prevEl.querySelector('.content').focus();
-    break;
-    case 'navUpEnd':
-      var prevEl = getPreviousNoteElement(noteDiv);
-      if(prevEl){
-        var prevContent = prevEl.querySelector('.content');
-        prevContent.focus();
-        caret.set(prevContent, prevContent.innerText.length);
-      }
-    break;
-
-    case 'navDown':
-      var nextEl = getNextNoteElement(noteDiv);
-      if(nextEl){
-        var nextContent = nextEl.querySelector('.content');
-        nextContent.focus();
-        caret.set(nextContent, nextContent.innerText.length);
-      }
-    break;
-    case 'navDownStart':
-      var nextEl = getNextNoteElement(noteDiv);
-      if(nextEl){
-        var nextContent = nextEl.querySelector('.content');
-        nextContent.focus();
-        caret.set(nextContent, 0);
-      }
-    break;
-
-    case 'new':
-      var carPos = caret.pos(content);
-      switch(carPos){
-        case "start":
-          var prevClose = noteDiv.previousSibling;
-          if(prevClose && prevClose.nodeType == 3) prevClose = null;
-          var prevCloseId = null;
-          if(prevClose) prevCloseId = prevClose.dataset.id;
-          newNote(note.parentId, prevCloseId);
-        break;
-        case "empty":
-        case "end":
-          var nextVisibleNote = getNextNoteElement(noteDiv);
-          if((nextVisibleNote && nextVisibleNote.parentNode.parentNode == noteDiv)||noteDiv.classList.contains('zoom')) newNote(note.id, null);
-          else newNote(note.parentId, note.id);
-        break
-        case "middle":
-          var carLoc = caret.get(content);
-          content.innerText = note.content.slice(0,carLoc);
-          throttle.input(note.id, content.innerText);
-          newNote(note.parentId, note.id, note.content.slice(carLoc));
-        break;
-      }
-    break;
-
-    case 'indent':
-      var prev = getPreviousNoteSiblingElement(noteDiv);
-      console.log(prev)
-      if(prev && prev.parentNode == noteDiv.parentNode){
-        var newSiblings = prev.querySelectorAll('.children .note');
-        var newPreceding = {id: null};
-        if(newSiblings.length) newPreceding = model[newSiblings[newSiblings.length -1].dataset.id];
-        var newParent = model[prev.dataset.id];
-        move(note, newPreceding.id, newParent.id);
-      }
-    break;
-
-    case 'outdent':
-      var parent = noteDiv.parentNode.parentNode;
-      if(parent.classList.contains('note')){
-        var newParentId;
-        if(parent.parentNode.id == 'inbox') newParentId = 'INBOX';
-        else newParentId = parent.parentNode.parentNode.dataset.id;
-        if(newParentId == undefined) newParentId = null;
-        move(note, parent.dataset.id, newParentId);
-      }
-    break;
-
-    case 'repositionUp':
-      var prev = getPreviousNoteSiblingElement(noteDiv);
-      if(prev && prev.nodeType!=3 && prev.classList.contains('note')){
-        var newPrev = prev.previousElementSibling;
-        newPrevId = null;
-        if(newPrev) newPrevId = newPrev.dataset.id;
-        move(note, newPrevId);
-      }
-    break;
-
-    case 'repositionDown':
-      var next = getNextNoteSiblingElement(noteDiv);
-      if(next && next.nodeType!=3 && next.classList.contains('note')){
-        move(note, next.dataset.id)
-      }
-    break;
-
-    case 'delete':
-      if(content.innerText != ''){
-        var prev = getPreviousNoteSiblingElement(noteDiv);
-        var prevAny = getPreviousNoteElement(noteDiv);
-        if(prev == null || prev != prevAny) break;
-        var prevContent = prev.querySelector('.content');
-        var prevContentLength = prevContent.innerText.length;
-        var prevNote = model[prev.dataset.id];
-        var contentText = content.innerText;
-        changeManager.change(prevNote.id, [{prop:'content', value:prevNote.content+contentText}], true);
-        changeManager.change(note.id, [{prop:'parentId', value:'deleted'},{prop:'content', value:''}]);
-      }
-      else{
-        var prev = getPreviousNoteElement(noteDiv);
-        if(prev == null) break;
-        var prevContent = prev.querySelector('.content');
-        var prevContentLength = prevContent.innerText.length;
-        changeManager.change(note.id, [{prop:'parentId', value:'deleted'}]);
-      }
-      prevContent.focus();
-      caret.set(prevContent, prevContentLength);
-    break;
-
+Tree.prototype.order = function(arr){
+  var arr2 = []
+  var next = arr.find(x=> x.precedingId == null);
+  while(next != undefined){
+    arr2.push(next);
+    next = arr.find(x=> x.precedingId == arr2[arr2.length -1].id);
   }
+  return arr2;
 }
 
-function getTop(el){
-  console.log('GETTING TOP')
-  console.log(el)
-  if(document.querySelector('#inbox').contains(el)) return document.querySelector('#inbox');
-  else return document.querySelector('#outline');
+//SUPPORTING OPERATIONS
+Tree.prototype.getObj = function(id){
+  return this.model.names[id] || null;
 }
 
-function getPreviousNoteElement(el){
-  var top = getTop(el);
-  var noteEls = Array.prototype.slice.call(top.querySelectorAll(`.note${top.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
-  var collapsedEls = Array.prototype.slice.call(top.querySelectorAll(`.isCollapsed .note${top.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
-  var diffEls = noteEls.filter(x=> collapsedEls.includes(x) == false);
-  return diffEls[diffEls.indexOf(el) -1];
+Tree.prototype.get = function(obj, prop){
+  if(obj != null && obj != undefined) return obj[prop];
+  else return null;
 }
 
-function getPreviousNoteSiblingElement(el){
-  console.log('WE ARE HERE')
-  var top = getTop(el);
-  console.log(top)
-  var parentId = model[el.dataset.id].parentId;
-  console.log(parentId);
-  console.log(top);
-  if(parentId && parentId != 'INBOX'){
-    console.log('HERE');
-    console.log(parentId);
-    console.log(top);
-    var noteEls = Array.prototype.slice.call(document.querySelectorAll(`#${top.id == 'outline' ? 'notes' : top.id } .note[data-id="${parentId}"]>.children>.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
-    console.log(noteEls);
-  }
-  else{
-    console.log('NO HERE');
-    var noteEls = Array.prototype.slice.call(document.querySelectorAll(`#${top.id == 'outline' ? 'notes' : top.id }>.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
-    console.log(noteEls);
-  }
-  return noteEls[noteEls.indexOf(el) -1];
+Tree.prototype.set = function(obj, prop, value, changes = {}){
+  if(obj == null) return changes;
+  var id = obj.id;
+  if(!changes[id]) changes[id] = {};
+  changes[id][prop] = value;
+  return changes;
 }
 
-function getNextNoteElement(el){
-  var top = getTop(el);
-  var noteEls = Array.prototype.slice.call(top.querySelectorAll(`.note${top.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
-  var collapsedEls = Array.prototype.slice.call(top.querySelectorAll(`.isCollapsed .note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
-  var diffEls = noteEls.filter(x=> collapsedEls.includes(x) == false);
-  return diffEls[diffEls.indexOf(el) +1];
+Tree.prototype.remove = function(obj, changes){
+  if(this.children(this.parent(obj)).length == 1) changes = this.set(this.parent(obj), 'isParent', false, changes);
+  changes = this.set(this.next(obj), 'precedingId', this.get(this.prev(obj), 'id'), changes);
+  changes = this.set(obj, 'parentId', null, changes);
+  return changes;
 }
 
-function getNextNoteSiblingElement(el){
-  var top = getTop(el);
-  var parentId = model[el.dataset.id].parentId;
-  if(parentId && parentId != 'INBOX'){
-    var noteEls = Array.prototype.slice.call(document.querySelectorAll(`#${top.id == 'outline' ? 'notes' : top.id } .note[data-id="${parentId}"]>.children>.note${top.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
-  }
-  else{
-    var noteEls = Array.prototype.slice.call(document.querySelectorAll(`#${top.id == 'outline' ? 'notes' : top.id }>.note${document.querySelectorAll('.showCompleted').length ? '':':not(.isComplete)' }`));
-  }
-  return noteEls[noteEls.indexOf(el) +1];
+Tree.prototype.insert = function(obj, parentId, precedingId, changes){
+  changes = this.set(obj, 'parentId', parentId, changes);
+  changes = this.set(obj, 'precedingId', precedingId, changes);
+  //anything which is currently occupying the space of the current node, needs to have its precedingId changed to this id
+  changes = this.set(this.model.raw.find(x=> x.precedingId == precedingId && x.parentId == parentId), 'precedingId', obj.id, changes);
+  changes = this.set(this.model.raw.find(x=> x.id == parentId), 'isParent', true, changes);
+  return changes;
 }
 
-function move(note, precedingId, parentId){
-  if(parentId === undefined) parentId = note.parentId;
-  changeManager.change(note.id, [{prop:"parentId", value:parentId}, {prop:"precedingId", value:precedingId}]);
-}
-
-function newNote(parentId, precedingId, content){
-  if(content == undefined) content = "";
-
-  var now = new Date();
-  var id = now.getTime().toString(16);
-
-  modelRaw.push({
-    "id": id,
-    "dueDate": null,
-    "content": ''
-  });
-  model[id] = modelRaw.find(x => x.id == id);
-
-  var div = createNoteDiv(model[id]);
-  holdingPen.appendChild(div);
-
-  changeManager.change(id, [{prop:"dateCreated", value:now.toISOString()}, {prop:"parentId", value:parentId}, {prop:"precedingId", value:precedingId}, {prop:"content", value:content}]);
-}
-
-},{}],10:[function(require,module,exports){
-module.exports = new Search();
-
-function Search(){
-
-}
-
-Search.prototype.apply = function(){
-  var founds = document.querySelectorAll('.found');
-  for(var i = 0; i < founds.length; i++) {
-    founds[i].classList.remove('found');
-  }
-  var foundAncestors = document.querySelectorAll('.foundAncestor');
-  for(var i = 0; i < foundAncestors.length; i++) {
-    foundAncestors[i].classList.remove('foundAncestor');
-  }
-
-  var val = document.querySelector('#searchBoxHolder input').value;
-
-  if(val.trim() == '') document.body.classList.remove('searching');
-  else document.body.classList.add('searching');
-
-  var keys = val.split(' ');
-  keys = keys.filter(x=> x!='');
-
-  var founds = modelRaw.filter(function(x){
-    for(var i = 0; i<keys.length; i++){
-      if(x.content.includes(keys[i])) return true;
+Tree.prototype.apply = function(changes){
+  var model = this.model;
+  Object.getOwnPropertyNames(changes).forEach(function(id){
+    if(model.names.hasOwnProperty(id) == false){
+      noteObject = defaultNoteObject(id);
+      model.raw.push(noteObject)
+      model.names[id] = noteObject;
     }
-  });
-
-  var foundAncestors = [];
-
-  founds.forEach(function(found){
-    document.querySelector(`.note[data-id="${found.id}"]`).classList.add('found');
-    var parent = model[found.parentId];
-    while(parent !== undefined){
-      if(foundAncestors.indexOf(parent.id) == -1) foundAncestors.push(parent.id);
-      parent = model[parent.parentId];
-    }
-  });
-
-  foundAncestors.forEach(function(foundAncestorId){
-    document.querySelector(`.note[data-id="${foundAncestorId}"]`).classList.add('foundAncestor');
-  });
-
-}
-
-},{}],11:[function(require,module,exports){
-//module to collect subsequent changes made based on a set of original changes
-//once collected all together, they can then be applied to the DOM or written to the database
-
-function Change(id, changes, changeList){
-
-  var topLevel = false;
-  if(changeList === undefined){
-    topLevel = true;
-    var changeList = {};
-  }
-
-  var note = model[id];
-
-  //grab any old values we may need to keep hold of
-  if(topLevel){
-    var oldParent = model[note.parentId];
-    var oldPreceding = model[note.precedingId];
-    var oldNext = modelRaw.find(x=> x.precedingId == note.id);
-  }
-
-  //make the change to the note in the model
-  changes.forEach(function(change){
-    model[id][change.prop] = change.value;
-  });
-
-  //figure out any subsequent changes
-  changes.forEach(function(change){
-
-    //process the text - return the processed version now and add it to the changelist if we are on frontend
-    if(change.prop == 'content'){
-      console.log('AAAAA');
-      var processed = processText('normal', change.value, id, changeList);
-      change.value = processed;
-    }
-
-    //add the change to the change list for use later
-    if(changeList[id] === undefined) changeList[id] = {};
-    changeList[id][change.prop] = change.value;
-
-    //return to prevent checking everything else every time we change text
-    if(change.prop == 'content') return changeList;
-
-    //now (for other types of changes) deal with any subsequent changes
-    switch(change.prop){
-      case 'isProjectAndIfSoPriority':
-        if(change.value > 0){
-          new Change(note.id, [{prop:'isTodo', value:true}], changeList);
-        }
-        else{
-          if(model[note.parentId] && model[note.parentId].isTodo == false) new Change(note.id, [{prop:'isTodo', value:false}], changeList);
-        }
-      break;
-
-      case 'dueDate':
-        if(note.effectiveDueDate != change.value){
-          new Change(note.id, [{prop:'effectiveDueDate', value:change.value}], changeList);
-        }
-      break;
-
-      case 'effectiveDueDate':
-        trickleDown(note, change, x=> x.dueDate==null, changeList);
-      break;
-
-      case 'isMemo':
-        if(change.value == true && note.isProjectAndIfSoPriority == 0){
-          new Change(note.id, [{prop:'isTodo', value:false}], changeList);
-        }
-        else if(change.value == false && model[note.parentId] && model[note.parentId].isTodo == 1){
-          new Change(note.id, [{prop:'isTodo', value:true}], changeList);
-        }
-      break;
-
-      case 'isTodo':
-        trickleDown(note, change, x=> x.isProjectAndIfSoPriority == 0 && x.isMemo == 0, changeList);
-      break;
-
-      case 'effectiveDueDate':
-        trickleDown(note, change, x=> x.dueDate == null, changeList);
-      break;
-
-      case 'dueDate':
-        new Change(note.id, [{prop:'effectiveDueDate', value:change.value}], changeList);
-      break;
-
-      case 'isComplete':
-        if(change.value == true){
-          new Change(note.id, [{prop:'isDescendantOfComplete', value:true}], changeList);
-        }
-        else{
-          new Change(note.id, [{prop:'isDescendantOfComplete', value:false}], changeList);
-        }
-      break;
-
-      case 'isDescendantOfComplete':
-        trickleDown(note, change, x=> x.isComplete == 0, changeList);
-      break;
-
-      case 'parentId':
-        var newParent = modelRaw.find(x=> x.id == note.parentId);
-        if(newParent){
-          if(newParent.isParent == false) new Change(newParent.id, [{prop:'isParent', value:true}], changeList);
-          if(newParent.isTodo != note.isTodo) new Change(note.id, [{prop:'isTodo', value:newParent.isTodo}], changeList);
-        }
-        //test if old parent still a parent or not and assign as appropriate
-        console.log(oldParent);
-        if(oldParent){
-          var isParent = 0;
-          if(modelRaw.filter(x=> x.parentId == oldParent.id).length) isParent = 1;
-          if(oldParent.isParent != isParent) new Change(oldParent.id, [{prop:'isParent', value:isParent}], changeList);
-        }
-      break;
-
-      case 'precedingId':
-        //any notes which followed this one should no longer do so
-        if(topLevel){
-          if(oldNext) new Change(oldNext.id, [{prop:'precedingId', value:(oldPreceding?oldPreceding.id:null)}], changeList);
-          var newNext = modelRaw.find(x => x.id != note.id && x.parentId == note.parentId && x.precedingId == note.precedingId);
-          if(newNext) new Change(newNext.id, [{prop:'precedingId', value:note.id}], changeList);
-        }
-      break;
-
-    }
-  });
-
-  if(topLevel){
-    console.log(changeList);
-    return changeList;
-  }
-}
-
-module.exports = Change;
-
-function trickleDown(note, change, stopPropTest, changeList){
-  console.log('in the trickle down')
-  var children = modelRaw.filter(x=> x.parentId == note.id);
-  children.forEach(function(child){
-    if(child[change.prop] != change.value && stopPropTest(child)){
-      console.log('making a new change')
-      new Change(child.id, [{prop:change.prop, value:change.value}], changeList);
-    }
-  });
-}
-
-},{}],12:[function(require,module,exports){
-var Change = require('./Change');
-
-var casesOriginal = [];
-
-module.exports = function(mode, text, id, changeList, useChangeManager = true){
-
-  if(text == null) text = '';
-
-  var cases = casesOriginal.filter(x=> x.modes.includes(mode));
-
-  cases.forEach(function(rcase){
-    //check for match(es), if none apply the false value
-    if(mode == 'normal' && rcase.regexp.test(text) == false){
-      //only make the update if it's not already that value
-      if(rcase.updateValueFalse != undefined && model[id][rcase.prop] != rcase.updateValueFalse) new Change(id, [{prop:rcase.prop, value:rcase.updateValueFalse}], changeList);
-    }
-    //replace matches
-    else text = text.replace(rcase.regexp, function(match){
-      //prepare original, groups for other functions
-      var original = arguments[arguments.length-1];
-      var groups = [];
-      for(var x = 1; x < arguments.length-2; x++){
-        groups.push(arguments[x]);
-      }
-
-      var processResult;
-      if(rcase.processFunc) processResult = rcase.processFunc(match, groups, original);
-
-      //make changes to other properties if required
-      if(mode == 'normal' || mode == 'snap'){
-        var updateResult;
-        if(typeof rcase.updateTemplate === 'string' || rcase.updateTemplate instanceof String) updateResult = fill(rcase.updateTemplate, match, groups, original, processResult);
-        else updateResult = rcase.updateTemplate;
-        //only make changes if we need to
-        if(model[id][rcase.prop] != updateResult){
-          if(mode == 'snap' && useChangeManager != false){
-            changeManager.change(id, [{prop:rcase.prop, value:updateResult}], changeList);
-          }
-          else new Change(id, [{prop:rcase.prop, value:updateResult}], changeList);
-        }
-      }
-
-      if(mode == 'blur') return fill(rcase.blurReplaceTemplate, match, groups, original, processResult);
-      else return fill(rcase.replaceTemplate, match, groups, original, processResult);
+    Object.getOwnPropertyNames(changes[id]).forEach(function(prop){
+      model.raw.find(x=> x.id == id)[prop] = changes[id][prop];
     });
   });
-  //always return manipulated text, even if it's not needed
-  return text;
 }
 
-function fill(template, match, groups, original, processResult){
-    return new Function("return `"+template+"`;").call({match:match, groups:groups, original:original, processResult:processResult});
+module.exports = Tree;
+
+},{"./default-note-object":35}],35:[function(require,module,exports){
+module.exports = function(id){
+  return {
+    id: id,
+    parentId: 'NEW'
+  };
 }
 
-function Case(options){
-  var self = this;
-  ['regexp', 'prop', 'updateTemplate', 'updateValueFalse', 'replaceTemplate', 'blurReplaceTemplate', 'processFunc', 'modes'].forEach(x=> self[x] = options[x]);
-  casesOriginal.push(self);
+},{}],36:[function(require,module,exports){
+module.exports = function(){
+  return btoa(Date.now().toString()+Math.round(Math.random()*100000).toString());
 }
 
-
-// // = memo
-new Case({
-  modes: ['normal','blur'],
-  regexp: /^\/\/(.*)/,
-  prop: 'isMemo',
-  updateTemplate: true,
-  updateValueFalse: false,
-  replaceTemplate: '${this.match}',
-  blurReplaceTemplate: '${this.processResult}',
-  processFunc: function(match, groups, original){
-    return groups[0];
-  }
-});
-
-// *-***** = project priority
-new Case({
-  modes: ['normal','blur'],
-  regexp: /(^|\s)(\*{1,25})(\s|$)/,
-  prop: 'isProjectAndIfSoPriority',
-  updateTemplate: '${this.processResult}',
-  updateValueFalse: 0,
-  replaceTemplate: '${this.match}',
-  blurReplaceTemplate: '${this.groups[0]}<span class=\'priority\'>${this.groups[1]}</span>${this.groups[2]}',
-  processFunc: function(match, groups, original){
-    return groups[1].length;
-  }
-});
-
-// ! = important
-new Case({
-  modes: ['normal','blur'],
-  regexp: /(^|\s)(\[!\])(\s|$)/,
-  prop: 'isImportant',
-  updateTemplate: true,
-  updateValueFalse: false,
-  replaceTemplate: '${this.match}',
-  blurReplaceTemplate: '',
-  processFunc: null
-});
-
-// https://mail.google.com/mail/?=? = email icon link
-new Case({
-  modes: ['blur'],
-  regexp: /(^|\s)(https\:\/\/mail\.google\.com\/mail\/\S*)=(\S+)(\s|$)/g,
-  blurReplaceTemplate: '${this.groups[0]}<span class="email fas fa-envelope"></span><a contenteditable=false href="${this.groups[1]}">${this.groups[2]}</a>${this.groups[3]}',
-});
-
-// ?.?=? = link
-new Case({
-  modes: ['blur'],
-  regexp: /(^|\s)(\S+\.\S+)=(\S+)(\s|$)/g,
-  blurReplaceTemplate: '${this.processResult}',
-  processFunc: function(match, groups, original){
-    var proto = '';
-    if(match.substr(0,5) != 'http:' && match.substr(0,6) != 'https:' && match.substr(0,5) != 'file:') proto = 'http://';
-    return `${groups[0]}<a contenteditable=false href="${proto}${groups[1]}">${groups[2]}</a>${groups[3]}`;
-  }
-});
-
-// #tag
-new Case({
-  modes: ['blur'],
-  regexp: /(^|\s)#(\S+)(\s|$)/g,
-  blurReplaceTemplate: '${this.groups[0]}<a class="tag" href="" contenteditable=false data-tag=\'#${this.groups[1]}\'>#${this.groups[1]}</a>${this.groups[2]}',
-});
-
-//due date
-new Case({
-  modes: ['snap'],
-  regexp: /(?:^|\s)due (?:(today|tomorrow)|(next )?((?:mon|tues|wednes|thurs|fri|satur|sun)day)|(next week|next month)|in (?:(1) (week|day|month)|(\d*) (days|weeks|months)))(?:\s|$)/,
-  prop: 'dueDate',
-  updateTemplate: '${this.processResult.toISOString()}',
-  replaceTemplate: '',
-  processFunc: function(match, groups, original){
-    var date = new Date();
-    date.setHours(9,0,0,0);
-    groups.unshift('');
-    console.log('HERE');
-    console.log(groups);
-    if(groups[1]){
-      if(groups[1] == 'today') return date;
-      else{
-        date.setDate(date.getDate()+1);
-        return date;
-      }
-    }
-      else if(groups[3]){
-      var nextExplicit = false;
-      if(groups[2] == 'next') nextExplicit = true;
-      var day = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].indexOf(groups[3].substr(0,1).toUpperCase()+groups[3].substr(1).toLowerCase());
-      return getNextXDay(date, day, nextExplicit);
-    }
-    else if(groups[4]){
-      if(groups[4] == 'next week'){
-        return getNextXDay(date, 0);
-      }
-      else if(groups[4] == 'next month'){
-        date.setMonth(date.getMonth()+1);
-        date.setDate(1);
-        return date;
-      }
-    }
-    else if(groups[5]){
-      if(groups[6] == 'day'){
-        date.setDate(date.getDate()+1);
-        return date;
-      }
-      if(groups[6] == 'week'){
-        date.setDate(date.getDate()+7);
-        return date;
-      }
-      if(groups[6] == 'month'){
-        date.setDate(date.getDate()+30);
-        return date;
-      }
-    }
-    else{
-      var quant = parseInt(groups[7]);
-      var days;
-      switch(groups[8]){
-        case "days":
-          days = quant;
-        break;
-        case "weeks":
-          days = quant * 7;
-        break;
-        case "months":
-          days = quant * 30;
-        break;
-      }
-      date.setDate(date.getDate()+days);
-      return date;
-    }
-  }
-});
-
-// ~4h time estimate
-new Case({
-  modes: ['normal','blur'],
-  regexp: /(^|\s)~(\d+(?:.\d+)?)(h)?(\s|$)/,
-  prop: 'timeEstimate',
-  updateTemplate: '${this.processResult}',
-  updateValueFalse: 15,
-  replaceTemplate: '${this.match}',
-  blurReplaceTemplate: '${this.groups[0]}<span class=\'timeEstimate\'>~${this.groups[1]}${this.groups[2] != undefined ? this.groups[2] : ``}</span>${this.groups[3]}',
-  processFunc: function(match, groups, original){
-    console.log('TIME ESTIMATE GRUOPS')
-    console.log(groups);
-    if(groups[2] != undefined) return Math.round(parseFloat(groups[1])*60);
-    else return Math.round(parseFloat(groups[1]));
-  }
-});
-
-/*
-new Case({
-  regexp: ,
-  prop: ,
-  updateTemplate: ,
-  updateValueFalse: ,
-  replaceTemplate: ,
-  processFunc:
-});
-*/
-
-function getDay(date, mod){
-  if(!mod) mod = 0;
-  date.setDate(date.getDate() + mod);
-  var day = date.getDay();
-  if(day == 0) day = 6;
-  else day = day-1;
-  return day;
+},{}],37:[function(require,module,exports){
+module.exports = function(changes, model){
+  var inverseChanges = {};
+  Object.getOwnPropertyNames(changes).forEach(function(id){
+    inverseChanges[id] = {};
+    Object.getOwnPropertyNames(changes[id]).forEach(function(prop){
+      if(model.names[id]) inverseChanges[id][prop] = model.names[id][prop];
+      else inverseChanges[id].parentId = 'NEW';
+    });
+  });
+  return inverseChanges;
 }
-
-function getNextXDay(date, day, explicitNext){ //0 = monday
-  var dateDay = getDay(date);
-  var diff;
-  if(day==dateDay) diff = 7;
-  if(day<dateDay) diff = 7-(dateDay-day);
-  if(day>dateDay){
-    if(explicitNext) diff = day-dateDay+7;
-    else diff = day-dateDay;
-  }
-  var tempDate = new Date();
-  tempDate.setDate(date.getDate() + diff);
-  return tempDate;
-}
-
-},{"./Change":11}],13:[function(require,module,exports){
-function Throttle(seconds){
-  this.seconds = seconds;
-}
-
-Throttle.prototype.input = function(id, content){
-  var self = this;
-  self.clear();
-  self.id = id;
-  self.content = content;
-  self.countdown = window.setTimeout(function(){self.send();}, self.seconds * 1000);
-}
-
-Throttle.prototype.send = function(){
-  console.log('THROTTLE SENDING')
-  var self = this;
-  changeManager.change(self.id, [{prop:"content", value:self.content}]);
-  self.clear();
-}
-
-Throttle.prototype.clear = function(){
-  var self = this;
-  if(self.countdown) window.clearTimeout(self.countdown);
-  self.id = undefined;
-  self.content = undefined;
-}
-
-module.exports = new Throttle(1);
 
 },{}]},{},[1]);

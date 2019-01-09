@@ -1,0 +1,11 @@
+.isParent.isCollapsed>.topLine .bullet::before{
+  visibility: visible;
+}
+.isParent.isCollapsed>.topLine:hover .toggle::before{
+  content: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M 20 50 H 80 M 50 80 V 20" fill="transparent" stroke="darkgray" stroke-width="12" stroke-linecap="round"/></svg>');
+  visibility: visible;
+}
+
+.isCollapsed>.children{
+  display: none;
+}

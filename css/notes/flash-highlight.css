@@ -1,0 +1,12 @@
+@keyframes highlight {
+  0% {
+    background: lightblue;
+  }
+  100% {
+    background: none;
+  }
+}
+
+.flashHighlight {
+  animation: highlight 1s;
+}

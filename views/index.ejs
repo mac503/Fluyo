@@ -6,33 +6,12 @@
   <link rel='stylesheet' type='text/css' href='styles.css'>
   <base target="_blank">
 </head>
-<body data-display='outline' spellcheck="false">
-<div id='holder'>
-  <div id='topbar'>
-    <div id='navigation'>
-      <div id='navigationHome' class="fas fa-home" data-hash-target=''></div>
-      <div id='breadcrumbs'></div>
-    </div>
-    <div id='inboxIcon' class="fas fa-inbox" data-hash-target='inbox'></div>
-    <div id='outlineIcon' class="fas fa-list-ul" data-hash-target=''></div>
-    <div id='todoIcon' class="fas fa-clipboard-list" data-hash-target='todo'></div>
-    <div id='toggleCompleted' class="far fa-check-square"></div>
-    <div id='search'><div id='searchBoxHolder'><input type='text' placeholder='&#xF002;'></input></div></div>
+<body spellcheck="false" data-events-handler='body'>
+  <div id='panelsHolder' class='two'>
+    <div class='panel' id='panel1' data-panel='one' data-events-handler='panel'></div>
+    <div class='panel' id='panel2' data-panel='two' data-events-handler='panel'></div>
+    <div class='panel' id='panel3' data-panel='three' data-events-handler='panel'></div>
   </div>
-  <div id='content'>
-    <div id='inbox'><div class='emptyMessage'>☺</div></div>
-    <div id='outline' class='display'>
-      <div id='notes'>
-      </div>
-    </div>
-    <div id='todo'>
-      <div id='cascade'>Cascade</div>
-      <div id='schedule'>
-        <div id='tabs'>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+<div id='saveIndicator'></div>
 </body>
 </html>

@@ -1,0 +1,58 @@
+body{
+  overflow-x: hidden;
+}
+
+#panel1, #panel2{
+
+}
+
+#panelsHolder{
+  height: 100%;
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  transition: 0.5s all ease-out;
+}
+
+#panelsHolder.one{
+  left: 0%;
+  width: 145%;
+}
+#panelsHolder.two{
+  left: -90%;
+  width: 280%;
+}
+#panelsHolder.three{
+  width: 145%;
+  left: -45%;
+}
+#panelsHolder>div{
+  flex: 1;
+}
+
+
+.panel{
+  overflow-x: auto;
+  overflow-y: scroll;
+  display: block;
+  border: 1px solid lightgray;
+  margin: 20px;
+  padding: 10px;
+}
+
+
+/*==================================================
+ * Effect 6
+ * ===============================================*/
+.panel
+{
+    position:relative;
+    -webkit-box-shadow:0 1px 4px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 0, 0, 0.1);
+       -moz-box-shadow:0 1px 4px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 0, 0, 0.1);
+            box-shadow:0 1px 4px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 0, 0, 0.1);
+}
+
+
+[data-id="DELETED"]{
+  display: none;
+}

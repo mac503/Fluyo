@@ -1,3 +1,7 @@
+var undoRedo = require('../../../operations-wrappers/undo-redo');
+
+var timeoutSeconds = 1;
+
 function Throttle(seconds){
   this.seconds = seconds;
 }
@@ -11,9 +15,9 @@ Throttle.prototype.input = function(id, content){
 }
 
 Throttle.prototype.send = function(){
-  console.log('THROTTLE SENDING')
   var self = this;
-  changeManager.change(self.id, [{prop:"content", value:self.content}]);
+  //only make a change if there's really something to change
+  if(self.content != model.names[self.id].content) undoRedo.new([{id:self.id, operation:'setProp', data:{prop:'content', value:self.content}}]);
   self.clear();
 }
 
@@ -24,4 +28,4 @@ Throttle.prototype.clear = function(){
   self.content = undefined;
 }
 
-module.exports = new Throttle(1);
+module.exports = new Throttle(timeoutSeconds);

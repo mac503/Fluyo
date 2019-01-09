@@ -1,0 +1,26 @@
+
+#search{
+  padding: 8px;
+  width: 15%;
+}
+
+#searchBoxHolder{
+  display: inline-block;
+  border: 1px solid lightgray;
+  border-radius: 20px;
+  padding: 3px;
+  padding-left: 6px;
+  padding-right: 6px;
+  width: 100%;
+}
+
+#searchBoxHolder input{
+  border: none;
+  width: 100%;
+}
+
+#searchBoxHolder input::placeholder{
+  font: 900 1em 'Font Awesome 5 Free';
+  color: lightgray;
+  text-align: right;
+}

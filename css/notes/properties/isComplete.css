@@ -1,0 +1,11 @@
+.isComplete>.topLine>.contentHolder>.content{
+  text-decoration: line-through;
+}
+.isComplete{
+  color: lightgray;
+//  display: none;
+}
+
+.showCompleted .isComplete{
+  display: initial;
+}
