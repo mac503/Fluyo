@@ -158,6 +158,10 @@ div, input{
 .showCompleted .isComplete{
   display: initial;
 }
+.topLine::after{
+  content: attr(data-prop-effective-priority);
+  display: inline-block;
+}
 .toggle{
   background-color: white;
   position: relative;

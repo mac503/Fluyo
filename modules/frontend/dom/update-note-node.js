@@ -10,6 +10,24 @@ module.exports = function(div, changes, initialDraw=false){
       else div.classList.remove(prop);
     }
   });
+  //changes which get applied as class changes IF NOT NULL
+  ['priority'].forEach(function(prop){
+    if(changes.hasOwnProperty(prop)){
+      if(changes[prop] != null) div.classList.add('has'+prop);
+      else div.classList.remove('has'+prop);
+    }
+  });
+  //list changes which get applied as data properties, and which component they get applied to
+  //e.g. [[prop, component]]
+  [
+    ['effectivePriority', 'topLine']
+  ].forEach(function(prop){
+    if(changes.hasOwnProperty(prop[0])){
+      if(div.querySelector('.'+prop[1])) div.querySelector('.'+prop[1]).dataset['prop'+prop[0].substr(0,1).toUpperCase()+prop[0].substr(1)] = changes[prop[0]];
+    }
+    else delete div.dataset['prop'+properCase(prop)];
+  });
+
   //if we currently have focus on the content field, will need to reset the cursor after things have been changed
   var resetCursor = false;
   var contentEl = div.querySelector('.content');

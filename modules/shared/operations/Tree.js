@@ -1,9 +1,5 @@
 const defaultNoteObject = require('./default-note-object');
-
-const waterfalls = {
-  //triggerProp: waterfallProp,
-  "isComplete": "isDescendantOfComplete"
-}
+const waterfalls = require('./waterfalls');
 
 const Tree = function(model){
   //make a deep copy of the model in order to not mutate it when using .apply()

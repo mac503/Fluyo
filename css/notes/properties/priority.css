@@ -1,0 +1,4 @@
+.topLine::after{
+  content: attr(data-prop-effective-priority);
+  display: inline-block;
+}

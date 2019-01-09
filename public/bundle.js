@@ -310,6 +310,24 @@ module.exports = function(div, changes, initialDraw=false){
       else div.classList.remove(prop);
     }
   });
+  //changes which get applied as class changes IF NOT NULL
+  ['priority'].forEach(function(prop){
+    if(changes.hasOwnProperty(prop)){
+      if(changes[prop] != null) div.classList.add('has'+prop);
+      else div.classList.remove('has'+prop);
+    }
+  });
+  //list changes which get applied as data properties, and which component they get applied to
+  //e.g. [[prop, component]]
+  [
+    ['effectivePriority', 'topLine']
+  ].forEach(function(prop){
+    if(changes.hasOwnProperty(prop[0])){
+      if(div.querySelector('.'+prop[1])) div.querySelector('.'+prop[1]).dataset['prop'+prop[0].substr(0,1).toUpperCase()+prop[0].substr(1)] = changes[prop[0]];
+    }
+    else delete div.dataset['prop'+properCase(prop)];
+  });
+
   //if we currently have focus on the content field, will need to reset the cursor after things have been changed
   var resetCursor = false;
   var contentEl = div.querySelector('.content');
@@ -1205,11 +1223,7 @@ module.exports = function(string){
 
 },{}],34:[function(require,module,exports){
 const defaultNoteObject = require('./default-note-object');
-
-const waterfalls = {
-  //triggerProp: waterfallProp,
-  "isComplete": "isDescendantOfComplete"
-}
+const waterfalls = require('./waterfalls');
 
 const Tree = function(model){
   //make a deep copy of the model in order to not mutate it when using .apply()
@@ -1355,7 +1369,7 @@ Tree.prototype.apply = function(changes){
 
 module.exports = Tree;
 
-},{"./default-note-object":35}],35:[function(require,module,exports){
+},{"./default-note-object":35,"./waterfalls":38}],35:[function(require,module,exports){
 module.exports = function(id){
   return {
     id: id,
@@ -1380,5 +1394,12 @@ module.exports = function(changes, model){
   });
   return inverseChanges;
 }
+
+},{}],38:[function(require,module,exports){
+module.exports = {
+  //triggerProp: waterfallProp,
+  "isComplete": "isDescendantOfComplete",
+  "priority": "effectivePriority"
+};
 
 },{}]},{},[1]);
