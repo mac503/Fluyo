@@ -4,7 +4,7 @@ var isVisible = require('../utils/is-visible');
 
 module.exports = function(div, changes, initialDraw=false){
   //list changes which get applied as class changes
-  ['isProject', 'isParent', 'isCollapsed', 'isComplete'].forEach(function(prop){
+  ['isParent', 'isCollapsed', 'isComplete', 'isDescendantOfComplete'].forEach(function(prop){
     if(changes.hasOwnProperty(prop)){
       if(changes[prop] == true || changes[prop] == 1) div.classList.add(prop);
       else div.classList.remove(prop);

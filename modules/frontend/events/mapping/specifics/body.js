@@ -1,7 +1,5 @@
 new Mapping('body', {
   'keydown': function(e){
-    console.log(e.target);
-    console.log(e);
     switch(e.keyCode){
       //ctrl+z
       case 90:

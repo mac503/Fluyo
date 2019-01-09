@@ -1,8 +1,9 @@
 const defaultNoteObject = require('./default-note-object');
 
-const waterfalls = [
-  {triggerProp: 'example', waterfallProp: 'example'}
-];
+const waterfalls = {
+  //triggerProp: waterfallProp,
+  "isComplete": "isDescendantOfComplete"
+}
 
 const Tree = function(model){
   //make a deep copy of the model in order to not mutate it when using .apply()
@@ -17,8 +18,8 @@ const Tree = function(model){
 
 //OPERATIONS
 Tree.prototype.setProp = function(id, data, changes = {}){
-  if(!changes[id]) changes[id] = {};
-  changes[id][data.prop] = data.value;
+  var obj = this.getObj(id);
+  changes = this.set(obj, data.prop, data.value, changes);
   return changes;
 }
 
@@ -98,6 +99,21 @@ Tree.prototype.set = function(obj, prop, value, changes = {}){
   var id = obj.id;
   if(!changes[id]) changes[id] = {};
   changes[id][prop] = value;
+  if(waterfalls.hasOwnProperty(prop)){
+    changes = this.waterfall(obj, waterfalls[prop], value, prop, changes);
+  }
+  return changes;
+}
+
+Tree.prototype.waterfall = function(obj, prop, value, triggerProp, changes = {}){
+  if(obj == null) return changes;
+  var id = obj.id;
+  if(!changes[id]) changes[id] = {};
+  changes[id][prop] = value;
+  var self = this;
+  this.children(obj).forEach(child =>{
+    if(child[triggerProp] != 0 && child[triggerProp] != null) changes = self.waterfall(child, prop, value, triggerProp, changes);
+  });
   return changes;
 }
 
