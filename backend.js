@@ -101,6 +101,7 @@ app.post('/api', function(req, res){
 
     var updates = req.body.updates;
     var tree = new Tree(model);
+    var knownIds = Object.keys(model.names);
 
     //keep going if true, otherwise break once something fails
     for(let update of updates){
@@ -114,8 +115,11 @@ app.post('/api', function(req, res){
 
       if(await knex.transaction(function(trx) {
         Promise.all(update.operations.filter(o=>o.operation == 'create').map(o=> {
-            if(model.names[o.id] == undefined) return knex('notes').transacting(trx).insert({id:o.id});
-            else console.log('ID already exists - should be as a result of an undo/redo.');
+            if(knownIds.some(x=> x==o.id) == false) return knex('notes').transacting(trx).insert({id:o.id});
+            else{
+              console.log('ID already exists - should be as a result of an undo/redo.');
+              return true;
+            }
           }
         ))
         .then(() => Promise.all(Object.keys(changes).map(id => knex('notes').transacting(trx).where({id: id}).update(changes[id]))))
@@ -125,6 +129,11 @@ app.post('/api', function(req, res){
       })
       .then(results => {
         update.status = 'COMPLETE';
+
+        //apply the changes to the real model so that getting deep inverse will work on the next iteration
+        model.raw = tree.model.raw;
+        model.names = tree.model.names;
+
         return true;
       })
       .catch(err => {
@@ -133,10 +142,6 @@ app.post('/api', function(req, res){
         //stop processing updates if any of them give us an error
         return false;
       }) == false) break; //break the for loop of updates above
-
-      //apply the changes to the real model so that getting deep inverse will work
-      model.raw = tree.model.raw;
-      model.names = tree.model.names;
 
     };
 
