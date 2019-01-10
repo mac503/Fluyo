@@ -17,10 +17,12 @@ module.exports = function(id, text){
 var cases = [
   {
     prop: 'priority',
-    regex: new RegExp(`\\*(${priority.join('|')})`),
+    regex: new RegExp(`\\*(-|${priority.join('|')})`),
     defaultWrap: true,
     getUpdateValue: (match, groups, original)=>{
-      return priority.indexOf(groups[1]);
+      var i = priority.indexOf(groups[1]);
+      if(i>-1) return i;
+      else return null;
     },
     getReplaceValue: (match, groups, original)=>{
       return '';

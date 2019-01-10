@@ -169,3 +169,8 @@ new Action('INPUT_CONTENT', function(e){
 new Action('FORCE_THROTTLE', function(e){
   if(throttle.id) throttle.send();
 });
+
+new Action('CLEAR_PRIORITY', function(e){
+  var id = getId(e.target);
+  undoRedo.new([{id:id, operation:'setProp', data:{prop:'priority', value:null}}]);
+});

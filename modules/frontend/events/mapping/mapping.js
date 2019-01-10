@@ -20,6 +20,7 @@ require('./specifics/toggle');
 require('./specifics/panel');
 require('./specifics/window');
 require('./specifics/body');
+require('./specifics/clear-priority');
 
 require('./actions/operation-actions');
 require('./actions/superficial-actions');

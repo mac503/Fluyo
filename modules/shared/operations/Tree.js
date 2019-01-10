@@ -105,9 +105,11 @@ Tree.prototype.set = function(obj, prop, value, changes = {}){
 Tree.prototype.waterfall = function(obj, prop, value, triggerProp, changes = {}){
   if(obj == null) return changes;
   var id = obj.id;
-  console.log('ID: '+id);
-  console.log(prop);
   if(!changes[id]) changes[id] = {};
+  //if the given value is null, inherit the parent's value
+  if(value == null){
+    value = this.parent(obj)[prop];
+  }
   changes[id][prop] = value;
   var self = this;
   this.children(obj).forEach(child =>{
@@ -129,6 +131,14 @@ Tree.prototype.insert = function(obj, parentId, precedingId, changes){
   //anything which is currently occupying the space of the current node, needs to have its precedingId changed to this id
   changes = this.set(this.model.raw.find(x=> x.precedingId == precedingId && x.parentId == parentId), 'precedingId', obj.id, changes);
   changes = this.set(this.model.raw.find(x=> x.id == parentId), 'isParent', true, changes);
+  //now for any waterfall properties, we need to inherit the new parent's values
+  //TODO might need to this.apply here otherwise the object's parent won't exist
+  this.apply(changes);
+  var self = this;
+  Object.keys(waterfalls).forEach(triggerProp=>{
+    //if the current item doesn't have the trigger prop set, it must inherit from its new parent
+    if(obj[triggerProp] == null) changes = self.waterfall(obj, waterfalls[triggerProp], null, triggerProp, changes);
+  });
   return changes;
 }
 

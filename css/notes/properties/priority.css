@@ -3,12 +3,11 @@
 }
 
 .priority[data-prop-effective-priority]::before{
-  content: attr(data-prop-effective-priority);
+  content: "\00A0";
   display: inline-block;
   border-left: 3px solid;
   padding-left: 2px;
 }
-
 .priority[data-prop-effective-priority="normal"]::before{
   border-left-color: lightgreen;
 }
@@ -20,6 +19,7 @@
 }
 
 .priority[data-prop-priority]::before{
+  content: attr(data-prop-effective-priority);
   border-bottom: 1px solid black;
   border-bottom-style: dotted;
 }

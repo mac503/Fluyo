@@ -11,7 +11,7 @@ module.exports = function(id){
       <div class='contentHolder'><div class='dragDropTop'></div><div class='dragDropBottom'></div>
         <div class='content' contenteditable='true' data-events-handler='note-content'></div>
         <div class='dueDate' data-date=''><span class='clearDate'></span></div>
-        <div class='priority'><span class='clearPriority'></span></div>
+        <div class='priority'><span class='clearPriority' data-events-handler='clear-priority'></span></div>
       </div>
     </div>
     <div class='children'></div>

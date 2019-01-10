@@ -13,7 +13,7 @@ require('./modules/frontend/model/model').initialise(function(model){
   //perhaps load any display settings saved in localstorage if necessary?
 });
 
-},{"./modules/frontend/dom/initial-draw":5,"./modules/frontend/events/listeners":10,"./modules/frontend/model/model":23,"./modules/frontend/operations-wrappers/change-history":24}],2:[function(require,module,exports){
+},{"./modules/frontend/dom/initial-draw":5,"./modules/frontend/events/listeners":10,"./modules/frontend/model/model":24,"./modules/frontend/operations-wrappers/change-history":25}],2:[function(require,module,exports){
 module.exports = {
   prevSibling: function(el, filters){
     if(filters == 'visible'){
@@ -254,7 +254,7 @@ module.exports = function(id){
       <div class='contentHolder'><div class='dragDropTop'></div><div class='dragDropBottom'></div>
         <div class='content' contenteditable='true' data-events-handler='note-content'></div>
         <div class='dueDate' data-date=''><span class='clearDate'></span></div>
-        <div class='priority'><span class='clearPriority'></span></div>
+        <div class='priority'><span class='clearPriority' data-events-handler='clear-priority'></span></div>
       </div>
     </div>
     <div class='children'></div>
@@ -298,7 +298,7 @@ module.exports = function(id, changes){
   });
 }
 
-},{"../model/model":23,"./new-note-div":6,"./update-note-node":9}],9:[function(require,module,exports){
+},{"../model/model":24,"./new-note-div":6,"./update-note-node":9}],9:[function(require,module,exports){
 var domHelpers = require('./dom-helpers');
 var caret = require('../utils/caret');
 var isVisible = require('../utils/is-visible');
@@ -306,6 +306,7 @@ var properCase = require('../utils/proper-case');
 var priority = require('../../shared/text-processing/properties/priority');
 
 module.exports = function(div, changes, initialDraw=false){
+  console.log(changes);
   //list changes which get applied as class changes
   ['isParent', 'isCollapsed', 'isComplete', 'isDescendantOfComplete'].forEach(function(prop){
     if(changes.hasOwnProperty(prop)){
@@ -334,10 +335,14 @@ module.exports = function(div, changes, initialDraw=false){
       process: x=>priority[x]
     },
   ].forEach(function(pcase){
-    if(changes.hasOwnProperty(pcase.prop) && changes[pcase.prop] != undefined){
-      if(div.querySelector(pcase.selector)) div.querySelector(pcase.selector).dataset['prop'+pcase.prop.substr(0,1).toUpperCase()+pcase.prop.substr(1)] = pcase.process(changes[pcase.prop]);
+    if(changes.hasOwnProperty(pcase.prop)){
+      if(changes[pcase.prop] != undefined){
+        if(div.querySelector(pcase.selector)) div.querySelector(pcase.selector).dataset['prop'+pcase.prop.substr(0,1).toUpperCase()+pcase.prop.substr(1)] = pcase.process(changes[pcase.prop]);
+      }
+      else{
+        if(div.querySelector(pcase.selector)) delete div.querySelector(pcase.selector).dataset['prop'+pcase.prop.substr(0,1).toUpperCase()+pcase.prop.substr(1)];
+      }
     }
-    else delete div.dataset['prop'+pcase.prop.substr(0,1).toUpperCase()+pcase.prop.substr(1)];
   });
 
   //if we currently have focus on the content field, will need to reset the cursor after things have been changed
@@ -393,7 +398,7 @@ module.exports = function(div, changes, initialDraw=false){
   }
 }
 
-},{"../../shared/text-processing/properties/priority":40,"../utils/caret":31,"../utils/is-visible":32,"../utils/proper-case":33,"./dom-helpers":2}],10:[function(require,module,exports){
+},{"../../shared/text-processing/properties/priority":41,"../utils/caret":32,"../utils/is-visible":33,"../utils/proper-case":34,"./dom-helpers":2}],10:[function(require,module,exports){
 //listen for these events
 var events = ['click', 'input', 'focusin', 'focusout', 'beforeunload', 'keydown', 'hashchange'];
 
@@ -405,6 +410,7 @@ module.exports = function(model){
   //pass to relevant handlers
   events.forEach(function(event){
     window.addEventListener(event, function(e){
+      //console.log(e);
       var t = e.target;
 
       //catch unloading
@@ -422,7 +428,7 @@ module.exports = function(model){
 
 }
 
-},{"../utils/proper-case":33,"./mapping/mapping":17}],11:[function(require,module,exports){
+},{"../utils/proper-case":34,"./mapping/mapping":17}],11:[function(require,module,exports){
 module.exports = {};
 
 },{}],12:[function(require,module,exports){
@@ -614,7 +620,12 @@ new Action('FORCE_THROTTLE', function(e){
   if(throttle.id) throttle.send();
 });
 
-},{"../../../../shared/operations/generate-id":36,"../../../../shared/text-processing/snap":41,"../../../dom/dom-helpers":2,"../../../operations-wrappers/undo-redo":28,"../../../utils/caret":31,"./get-id-from-dom-element":12,"./new-action":13,"./throttle":16}],15:[function(require,module,exports){
+new Action('CLEAR_PRIORITY', function(e){
+  var id = getId(e.target);
+  undoRedo.new([{id:id, operation:'setProp', data:{prop:'priority', value:null}}]);
+});
+
+},{"../../../../shared/operations/generate-id":37,"../../../../shared/text-processing/snap":42,"../../../dom/dom-helpers":2,"../../../operations-wrappers/undo-redo":29,"../../../utils/caret":32,"./get-id-from-dom-element":12,"./new-action":13,"./throttle":16}],15:[function(require,module,exports){
 var sync = require('../../../operations-wrappers/sync-stack');
 var domHelpers = require('../../../dom/dom-helpers');
 var caret = require('../../../utils/caret');
@@ -673,7 +684,7 @@ new Action('BEFORE_UNLOAD', function(e){
   return sync.isClear();
 });
 
-},{"../../../dom/dom-helpers":2,"../../../operations-wrappers/sync-stack":27,"../../../utils/caret":31,"./new-action":13}],16:[function(require,module,exports){
+},{"../../../dom/dom-helpers":2,"../../../operations-wrappers/sync-stack":28,"../../../utils/caret":32,"./new-action":13}],16:[function(require,module,exports){
 var undoRedo = require('../../../operations-wrappers/undo-redo');
 
 var timeoutSeconds = 1;
@@ -706,7 +717,7 @@ Throttle.prototype.clear = function(){
 
 module.exports = new Throttle(timeoutSeconds);
 
-},{"../../../operations-wrappers/undo-redo":28}],17:[function(require,module,exports){
+},{"../../../operations-wrappers/undo-redo":29}],17:[function(require,module,exports){
 module.exports = mapping = [];
 
 Mapping = function(name, eventsToActions){
@@ -729,6 +740,7 @@ require('./specifics/toggle');
 require('./specifics/panel');
 require('./specifics/window');
 require('./specifics/body');
+require('./specifics/clear-priority');
 
 require('./actions/operation-actions');
 require('./actions/superficial-actions');
@@ -736,7 +748,7 @@ actions = require('./actions/actions');
 
 window.mapping = mapping;
 
-},{"./actions/actions":11,"./actions/operation-actions":14,"./actions/superficial-actions":15,"./specifics/body":18,"./specifics/note-content":19,"./specifics/panel":20,"./specifics/toggle":21,"./specifics/window":22}],18:[function(require,module,exports){
+},{"./actions/actions":11,"./actions/operation-actions":14,"./actions/superficial-actions":15,"./specifics/body":18,"./specifics/clear-priority":19,"./specifics/note-content":20,"./specifics/panel":21,"./specifics/toggle":22,"./specifics/window":23}],18:[function(require,module,exports){
 new Mapping('body', {
   'keydown': function(e){
     switch(e.keyCode){
@@ -765,6 +777,11 @@ new Mapping('body', {
 });
 
 },{}],19:[function(require,module,exports){
+new Mapping('clear-priority', {
+  'click': 'CLEAR_PRIORITY'
+});
+
+},{}],20:[function(require,module,exports){
 var caret = require('../../../utils/caret');
 
 new Mapping('note-content', {
@@ -821,17 +838,17 @@ new Mapping('note-content', {
   'focusout': 'FORCE_THROTTLE'
 });
 
-},{"../../../utils/caret":31}],20:[function(require,module,exports){
+},{"../../../utils/caret":32}],21:[function(require,module,exports){
 new Mapping('panel', {
   'click': 'PANEL_SLIDE'
 });
 
-},{}],21:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 new Mapping('toggle', {
   'click': 'TOGGLE_CHILDREN'
 });
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 var domHelpers = require('../../../dom/dom-helpers');
 
 new Mapping('window', {
@@ -857,7 +874,7 @@ new Mapping('window', {
   }
 });
 
-},{"../../../dom/dom-helpers":2}],23:[function(require,module,exports){
+},{"../../../dom/dom-helpers":2}],24:[function(require,module,exports){
 var ajax = require('../utils/ajax');
 
 module.exports = model = {};
@@ -885,7 +902,7 @@ model.update = function(newModel){
   });
 }
 
-},{"../utils/ajax":30}],24:[function(require,module,exports){
+},{"../utils/ajax":31}],25:[function(require,module,exports){
 var Tree = require('../../shared/operations/Tree');
 
 module.exports = changeHistory = {};
@@ -924,7 +941,7 @@ changeHistory.rollback = function(index){
   model.names = tree.model.names;
 }
 
-},{"../../shared/operations/Tree":34}],25:[function(require,module,exports){
+},{"../../shared/operations/Tree":35}],26:[function(require,module,exports){
 var model = require('../model/model');
 
 module.exports = function(actions){
@@ -955,7 +972,7 @@ function getInverse(action){
   }
 }
 
-},{"../model/model":23}],26:[function(require,module,exports){
+},{"../model/model":24}],27:[function(require,module,exports){
 //carry out the operation on the current model, update the results, and draw the results
 var model = require('../model/model');
 var Tree = require('../../shared/operations/Tree');
@@ -985,7 +1002,7 @@ module.exports = function(operations){
   return deepInverse;
 }
 
-},{"../../shared/operations/Tree":34,"../../shared/operations/get-deep-inverse":37,"../dom/draw-changes":3,"../model/model":23,"../temp-order-notes":29}],27:[function(require,module,exports){
+},{"../../shared/operations/Tree":35,"../../shared/operations/get-deep-inverse":38,"../dom/draw-changes":3,"../model/model":24,"../temp-order-notes":30}],28:[function(require,module,exports){
 var pollSeconds = 5;
 
 var operate = require('./operate');
@@ -1062,7 +1079,7 @@ window.setInterval(sync.sync, pollSeconds * 1000);
 
 window.sync = sync;
 
-},{"../utils/ajax":30,"./change-history":24,"./operate":26}],28:[function(require,module,exports){
+},{"../utils/ajax":31,"./change-history":25,"./operate":27}],29:[function(require,module,exports){
 var syncStack = require('./sync-stack');
 var getInverse = require('./get-inverse');
 
@@ -1100,7 +1117,7 @@ undoRedo.undo = function(){
 
 window.undoRedo = undoRedo;
 
-},{"./get-inverse":25,"./sync-stack":27}],29:[function(require,module,exports){
+},{"./get-inverse":26,"./sync-stack":28}],30:[function(require,module,exports){
 module.exports = function(childrenRaw){
   var children = [];
   var precedingId = null;
@@ -1112,7 +1129,7 @@ module.exports = function(childrenRaw){
   return children;
 }
 
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 function ajax(method, callback, data){
 
   if(data == null) data = {};
@@ -1150,7 +1167,7 @@ module.exports = {
   put
 }
 
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 module.exports = {
   get,
   set,
@@ -1218,7 +1235,7 @@ function caretAtEnd(div){
   else return false;
 }
 
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 module.exports = function(el){
   if(el.closest('.holdingPen') == null){
     //make sure it's not a hidden child of a collapsed element
@@ -1231,12 +1248,12 @@ module.exports = function(el){
   else return false;
 }
 
-},{}],33:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 module.exports = function(string){
   return string[0].toUpperCase()+string.substr(1).toLowerCase();
 }
 
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 const defaultNoteObject = require('./default-note-object');
 const waterfalls = require('./waterfalls');
 
@@ -1344,9 +1361,11 @@ Tree.prototype.set = function(obj, prop, value, changes = {}){
 Tree.prototype.waterfall = function(obj, prop, value, triggerProp, changes = {}){
   if(obj == null) return changes;
   var id = obj.id;
-  console.log('ID: '+id);
-  console.log(prop);
   if(!changes[id]) changes[id] = {};
+  //if the given value is null, inherit the parent's value
+  if(value == null){
+    value = this.parent(obj)[prop];
+  }
   changes[id][prop] = value;
   var self = this;
   this.children(obj).forEach(child =>{
@@ -1368,6 +1387,14 @@ Tree.prototype.insert = function(obj, parentId, precedingId, changes){
   //anything which is currently occupying the space of the current node, needs to have its precedingId changed to this id
   changes = this.set(this.model.raw.find(x=> x.precedingId == precedingId && x.parentId == parentId), 'precedingId', obj.id, changes);
   changes = this.set(this.model.raw.find(x=> x.id == parentId), 'isParent', true, changes);
+  //now for any waterfall properties, we need to inherit the new parent's values
+  //TODO might need to this.apply here otherwise the object's parent won't exist
+  this.apply(changes);
+  var self = this;
+  Object.keys(waterfalls).forEach(triggerProp=>{
+    //if the current item doesn't have the trigger prop set, it must inherit from its new parent
+    if(obj[triggerProp] == null) changes = self.waterfall(obj, waterfalls[triggerProp], null, triggerProp, changes);
+  });
   return changes;
 }
 
@@ -1387,7 +1414,7 @@ Tree.prototype.apply = function(changes){
 
 module.exports = Tree;
 
-},{"./default-note-object":35,"./waterfalls":38}],35:[function(require,module,exports){
+},{"./default-note-object":36,"./waterfalls":39}],36:[function(require,module,exports){
 module.exports = function(id){
   return {
     id: id,
@@ -1395,12 +1422,12 @@ module.exports = function(id){
   };
 }
 
-},{}],36:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 module.exports = function(){
   return btoa(Date.now().toString()+Math.round(Math.random()*100000).toString());
 }
 
-},{}],37:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 module.exports = function(changes, model){
   var inverseChanges = {};
   Object.getOwnPropertyNames(changes).forEach(function(id){
@@ -1413,14 +1440,14 @@ module.exports = function(changes, model){
   return inverseChanges;
 }
 
-},{}],38:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 module.exports = {
   //triggerProp: waterfallProp,
   "isComplete": "isDescendantOfComplete",
   "priority": "effectivePriority"
 };
 
-},{}],39:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 var undoRedo = require('../../frontend/operations-wrappers/undo-redo');
 
 module.exports = function(id, text, cases){
@@ -1481,14 +1508,14 @@ module.exports = function(id, text, cases){
   if(operations.length > 0) undoRedo.new(operations);
 }
 
-},{"../../frontend/operations-wrappers/undo-redo":28}],40:[function(require,module,exports){
+},{"../../frontend/operations-wrappers/undo-redo":29}],41:[function(require,module,exports){
 module.exports = [
   'normal',
   'important',
   'critical'
 ];
 
-},{}],41:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 const process = require('./generic-process-text');
 const priority = require('./properties/priority');
 
@@ -1508,10 +1535,12 @@ module.exports = function(id, text){
 var cases = [
   {
     prop: 'priority',
-    regex: new RegExp(`\\*(${priority.join('|')})`),
+    regex: new RegExp(`\\*(-|${priority.join('|')})`),
     defaultWrap: true,
     getUpdateValue: (match, groups, original)=>{
-      return priority.indexOf(groups[1]);
+      var i = priority.indexOf(groups[1]);
+      if(i>-1) return i;
+      else return null;
     },
     getReplaceValue: (match, groups, original)=>{
       return '';
@@ -1519,4 +1548,4 @@ var cases = [
   }
 ];
 
-},{"./generic-process-text":39,"./properties/priority":40}]},{},[1]);
+},{"./generic-process-text":40,"./properties/priority":41}]},{},[1]);

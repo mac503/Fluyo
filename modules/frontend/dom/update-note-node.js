@@ -5,6 +5,7 @@ var properCase = require('../utils/proper-case');
 var priority = require('../../shared/text-processing/properties/priority');
 
 module.exports = function(div, changes, initialDraw=false){
+  console.log(changes);
   //list changes which get applied as class changes
   ['isParent', 'isCollapsed', 'isComplete', 'isDescendantOfComplete'].forEach(function(prop){
     if(changes.hasOwnProperty(prop)){
@@ -33,10 +34,14 @@ module.exports = function(div, changes, initialDraw=false){
       process: x=>priority[x]
     },
   ].forEach(function(pcase){
-    if(changes.hasOwnProperty(pcase.prop) && changes[pcase.prop] != undefined){
-      if(div.querySelector(pcase.selector)) div.querySelector(pcase.selector).dataset['prop'+pcase.prop.substr(0,1).toUpperCase()+pcase.prop.substr(1)] = pcase.process(changes[pcase.prop]);
+    if(changes.hasOwnProperty(pcase.prop)){
+      if(changes[pcase.prop] != undefined){
+        if(div.querySelector(pcase.selector)) div.querySelector(pcase.selector).dataset['prop'+pcase.prop.substr(0,1).toUpperCase()+pcase.prop.substr(1)] = pcase.process(changes[pcase.prop]);
+      }
+      else{
+        if(div.querySelector(pcase.selector)) delete div.querySelector(pcase.selector).dataset['prop'+pcase.prop.substr(0,1).toUpperCase()+pcase.prop.substr(1)];
+      }
     }
-    else delete div.dataset['prop'+pcase.prop.substr(0,1).toUpperCase()+pcase.prop.substr(1)];
   });
 
   //if we currently have focus on the content field, will need to reset the cursor after things have been changed
