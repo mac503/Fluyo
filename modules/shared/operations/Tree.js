@@ -96,6 +96,7 @@ Tree.prototype.set = function(obj, prop, value, changes = {}){
   if(!changes[id]) changes[id] = {};
   changes[id][prop] = value;
   if(waterfalls.hasOwnProperty(prop)){
+    console.log('Waterfall exists for '+prop);
     changes = this.waterfall(obj, waterfalls[prop], value, prop, changes);
   }
   return changes;
@@ -104,11 +105,13 @@ Tree.prototype.set = function(obj, prop, value, changes = {}){
 Tree.prototype.waterfall = function(obj, prop, value, triggerProp, changes = {}){
   if(obj == null) return changes;
   var id = obj.id;
+  console.log('ID: '+id);
+  console.log(prop);
   if(!changes[id]) changes[id] = {};
   changes[id][prop] = value;
   var self = this;
   this.children(obj).forEach(child =>{
-    if(child[triggerProp] != 0 && child[triggerProp] != null) changes = self.waterfall(child, prop, value, triggerProp, changes);
+    if(child[triggerProp] == null) changes = self.waterfall(child, prop, value, triggerProp, changes);
   });
   return changes;
 }
