@@ -1,4 +1,22 @@
-.topLine::after{
+.priority{
+  display: inline-block;
+}
+
+.priority[data-prop-effective-priority]::before{
   content: attr(data-prop-effective-priority);
   display: inline-block;
+  border-left: 3px solid pink;
+  padding-left: 2px;
+}
+
+.priority[data-prop-priority]::before{
+  border-left: 3px solid lightgreen;
+}
+
+.priority[data-prop-priority] .clearPriority::after{
+  content: "\2716";
+  font-size: .8em;
+  color: lightgray;
+  margin-left: 3px;
+  cursor: pointer;
 }

@@ -254,6 +254,7 @@ module.exports = function(id){
       <div class='contentHolder'><div class='dragDropTop'></div><div class='dragDropBottom'></div>
         <div class='content' contenteditable='true' data-events-handler='note-content'></div>
         <div class='dueDate' data-date=''><span class='clearDate'></span></div>
+        <div class='priority'><span class='clearPriority'></span></div>
       </div>
     </div>
     <div class='children'></div>
@@ -302,6 +303,7 @@ var domHelpers = require('./dom-helpers');
 var caret = require('../utils/caret');
 var isVisible = require('../utils/is-visible');
 var properCase = require('../utils/proper-case');
+var priority = require('../../shared/text-processing/properties/priority');
 
 module.exports = function(div, changes, initialDraw=false){
   //list changes which get applied as class changes
@@ -321,12 +323,21 @@ module.exports = function(div, changes, initialDraw=false){
   //list changes which get applied as data properties, and which component they get applied to
   //e.g. [[prop, component]]
   [
-    ['effectivePriority', 'topLine']
-  ].forEach(function(prop){
-    if(changes.hasOwnProperty(prop[0])){
-      if(div.querySelector('.'+prop[1])) div.querySelector('.'+prop[1]).dataset['prop'+prop[0].substr(0,1).toUpperCase()+prop[0].substr(1)] = changes[prop[0]];
+    {
+      prop:'effectivePriority',
+      selector: '.priority',
+      process: x=>priority[x]
+    },
+    {
+      prop:'priority',
+      selector: '.priority',
+      process: x=>priority[x]
+    },
+  ].forEach(function(pcase){
+    if(changes.hasOwnProperty(pcase.prop) && changes[pcase.prop] != undefined){
+      if(div.querySelector(pcase.selector)) div.querySelector(pcase.selector).dataset['prop'+pcase.prop.substr(0,1).toUpperCase()+pcase.prop.substr(1)] = pcase.process(changes[pcase.prop]);
     }
-    else delete div.dataset['prop'+properCase(prop[0])];
+    else delete div.dataset['prop'+pcase.prop.substr(0,1).toUpperCase()+pcase.prop.substr(1)];
   });
 
   //if we currently have focus on the content field, will need to reset the cursor after things have been changed
@@ -382,7 +393,7 @@ module.exports = function(div, changes, initialDraw=false){
   }
 }
 
-},{"../utils/caret":31,"../utils/is-visible":32,"../utils/proper-case":33,"./dom-helpers":2}],10:[function(require,module,exports){
+},{"../../shared/text-processing/properties/priority":40,"../utils/caret":31,"../utils/is-visible":32,"../utils/proper-case":33,"./dom-helpers":2}],10:[function(require,module,exports){
 //listen for these events
 var events = ['click', 'input', 'focusin', 'focusout', 'beforeunload', 'keydown', 'hashchange'];
 
@@ -603,7 +614,7 @@ new Action('FORCE_THROTTLE', function(e){
   if(throttle.id) throttle.send();
 });
 
-},{"../../../../shared/operations/generate-id":36,"../../../../shared/text-processing/snap":40,"../../../dom/dom-helpers":2,"../../../operations-wrappers/undo-redo":28,"../../../utils/caret":31,"./get-id-from-dom-element":12,"./new-action":13,"./throttle":16}],15:[function(require,module,exports){
+},{"../../../../shared/operations/generate-id":36,"../../../../shared/text-processing/snap":41,"../../../dom/dom-helpers":2,"../../../operations-wrappers/undo-redo":28,"../../../utils/caret":31,"./get-id-from-dom-element":12,"./new-action":13,"./throttle":16}],15:[function(require,module,exports){
 var sync = require('../../../operations-wrappers/sync-stack');
 var domHelpers = require('../../../dom/dom-helpers');
 var caret = require('../../../utils/caret');
@@ -1471,7 +1482,15 @@ module.exports = function(id, text, cases){
 }
 
 },{"../../frontend/operations-wrappers/undo-redo":28}],40:[function(require,module,exports){
+module.exports = [
+  'normal',
+  'important',
+  'critical'
+];
+
+},{}],41:[function(require,module,exports){
 const process = require('./generic-process-text');
+const priority = require('./properties/priority');
 
 module.exports = function(id, text){
   return process(id, text, cases);
@@ -1489,10 +1508,10 @@ module.exports = function(id, text){
 var cases = [
   {
     prop: 'priority',
-    regex: /\*(normal|important|critical)/,
+    regex: new RegExp(`\\*(${priority.join('|')})`),
     defaultWrap: true,
     getUpdateValue: (match, groups, original)=>{
-      return ['normal','important','critical'].indexOf(groups[1]);
+      return priority.indexOf(groups[1]);
     },
     getReplaceValue: (match, groups, original)=>{
       return '';
@@ -1500,4 +1519,4 @@ var cases = [
   }
 ];
 
-},{"./generic-process-text":39}]},{},[1]);
+},{"./generic-process-text":39,"./properties/priority":40}]},{},[1]);

@@ -2,6 +2,7 @@ var domHelpers = require('./dom-helpers');
 var caret = require('../utils/caret');
 var isVisible = require('../utils/is-visible');
 var properCase = require('../utils/proper-case');
+var priority = require('../../shared/text-processing/properties/priority');
 
 module.exports = function(div, changes, initialDraw=false){
   //list changes which get applied as class changes
@@ -21,12 +22,21 @@ module.exports = function(div, changes, initialDraw=false){
   //list changes which get applied as data properties, and which component they get applied to
   //e.g. [[prop, component]]
   [
-    ['effectivePriority', 'topLine']
-  ].forEach(function(prop){
-    if(changes.hasOwnProperty(prop[0])){
-      if(div.querySelector('.'+prop[1])) div.querySelector('.'+prop[1]).dataset['prop'+prop[0].substr(0,1).toUpperCase()+prop[0].substr(1)] = changes[prop[0]];
+    {
+      prop:'effectivePriority',
+      selector: '.priority',
+      process: x=>priority[x]
+    },
+    {
+      prop:'priority',
+      selector: '.priority',
+      process: x=>priority[x]
+    },
+  ].forEach(function(pcase){
+    if(changes.hasOwnProperty(pcase.prop) && changes[pcase.prop] != undefined){
+      if(div.querySelector(pcase.selector)) div.querySelector(pcase.selector).dataset['prop'+pcase.prop.substr(0,1).toUpperCase()+pcase.prop.substr(1)] = pcase.process(changes[pcase.prop]);
     }
-    else delete div.dataset['prop'+properCase(prop[0])];
+    else delete div.dataset['prop'+pcase.prop.substr(0,1).toUpperCase()+pcase.prop.substr(1)];
   });
 
   //if we currently have focus on the content field, will need to reset the cursor after things have been changed

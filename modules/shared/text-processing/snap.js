@@ -1,4 +1,5 @@
 const process = require('./generic-process-text');
+const priority = require('./properties/priority');
 
 module.exports = function(id, text){
   return process(id, text, cases);
@@ -16,10 +17,10 @@ module.exports = function(id, text){
 var cases = [
   {
     prop: 'priority',
-    regex: /\*(normal|important|critical)/,
+    regex: new RegExp(`\\*(${priority.join('|')})`),
     defaultWrap: true,
     getUpdateValue: (match, groups, original)=>{
-      return ['normal','important','critical'].indexOf(groups[1]);
+      return priority.indexOf(groups[1]);
     },
     getReplaceValue: (match, groups, original)=>{
       return '';
