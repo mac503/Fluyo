@@ -14,7 +14,7 @@ module.exports = function(div, changes, initialDraw=false){
     }
   });
   //changes which get applied as class changes IF NOT NULL
-  ['priority'].forEach(function(prop){
+  ['priority', 'dueDate'].forEach(function(prop){
     if(changes.hasOwnProperty(prop)){
       if(changes[prop] != null) div.classList.add('has'+prop);
       else div.classList.remove('has'+prop);
@@ -33,6 +33,16 @@ module.exports = function(div, changes, initialDraw=false){
       selector: '.priority',
       process: x=>priority[x]
     },
+    {
+      prop:'effectiveDueDate',
+      selector: '.dueDate',
+      process: x=>x.substr(0,10)
+    },
+    {
+      prop:'dueDate',
+      selector: '.dueDate',
+      process: x=>x
+    }
   ].forEach(function(pcase){
     if(changes.hasOwnProperty(pcase.prop)){
       if(changes[pcase.prop] != undefined){

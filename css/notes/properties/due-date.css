@@ -1,3 +1,23 @@
+.dueDate:not([data-prop-effective-due-date]){
+  display: none;
+}
+
 .dueDate{
+  position: relative;
   display: inline-block;
+  border-left: 3px solid yellow;
+  user-select: none;
+  cursor: pointer;
+  font-size: .8em;
+}
+.dueDate::before{
+  display: inline-block;
+  content: attr(data-prop-effective-due-date);
+  padding-left: .4em;
+}
+.dueDate .clearDate::after{
+  content: "\2716";
+  color: gray;
+  color: lightgray;
+  padding-left: .2em;
 }

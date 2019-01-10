@@ -1,5 +1,6 @@
 module.exports = {
   //triggerProp: waterfallProp,
   "isComplete": "isDescendantOfComplete",
-  "priority": "effectivePriority"
+  "priority": "effectivePriority",
+  "dueDate": "effectiveDueDate"
 };

@@ -159,6 +159,7 @@ div, input{
   display: initial;
 }
 .priority{
+  font-size: .8em;
   display: inline-block;
 }
 
@@ -166,7 +167,9 @@ div, input{
   content: "\00A0";
   display: inline-block;
   border-left: 3px solid;
-  padding-left: 2px;
+}
+.priority:not([data-prop-priority])[data-prop-effective-priority="normal"]::before{
+  display: none;
 }
 .priority[data-prop-effective-priority="normal"]::before{
   border-left-color: lightgreen;
@@ -182,14 +185,14 @@ div, input{
   content: attr(data-prop-effective-priority);
   border-bottom: 1px solid black;
   border-bottom-style: dotted;
+  padding-left: .2em;
 }
 
 .priority[data-prop-priority] .clearPriority::after{
   content: "\2716";
-  font-size: .8em;
   color: lightgray;
-  margin-left: 3px;
   cursor: pointer;
+  padding-left: .2em;
 }
 .toggle{
   background-color: white;
@@ -279,8 +282,28 @@ div, input{
   border: 1px solid black;
   padding: 1px;
 }
+.dueDate:not([data-prop-effective-due-date]){
+  display: none;
+}
+
 .dueDate{
+  position: relative;
   display: inline-block;
+  border-left: 3px solid yellow;
+  user-select: none;
+  cursor: pointer;
+  font-size: .8em;
+}
+.dueDate::before{
+  display: inline-block;
+  content: attr(data-prop-effective-due-date);
+  padding-left: .4em;
+}
+.dueDate .clearDate::after{
+  content: "\2716";
+  color: gray;
+  color: lightgray;
+  padding-left: .2em;
 }
 .note{
   display: block;
