@@ -158,6 +158,9 @@ div, input{
 .showCompleted .isComplete{
   display: initial;
 }
+.filterComponent{
+  min-height: 1em;
+}
 .priority{
   font-size: .8em;
   display: inline-block;

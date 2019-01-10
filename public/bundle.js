@@ -303,10 +303,10 @@ var domHelpers = require('./dom-helpers');
 var caret = require('../utils/caret');
 var isVisible = require('../utils/is-visible');
 var properCase = require('../utils/proper-case');
+var friendlyDate = require('../utils/friendly-date');
 var priority = require('../../shared/text-processing/properties/priority');
 
 module.exports = function(div, changes, initialDraw=false){
-  console.log(changes);
   //list changes which get applied as class changes
   ['isParent', 'isCollapsed', 'isComplete', 'isDescendantOfComplete'].forEach(function(prop){
     if(changes.hasOwnProperty(prop)){
@@ -337,7 +337,7 @@ module.exports = function(div, changes, initialDraw=false){
     {
       prop:'effectiveDueDate',
       selector: '.dueDate',
-      process: x=>x.substr(0,10)
+      process: x=>friendlyDate(x)
     },
     {
       prop:'dueDate',
@@ -408,7 +408,7 @@ module.exports = function(div, changes, initialDraw=false){
   }
 }
 
-},{"../../shared/text-processing/properties/priority":41,"../utils/caret":32,"../utils/is-visible":33,"../utils/proper-case":34,"./dom-helpers":2}],10:[function(require,module,exports){
+},{"../../shared/text-processing/properties/priority":42,"../utils/caret":32,"../utils/friendly-date":33,"../utils/is-visible":34,"../utils/proper-case":35,"./dom-helpers":2}],10:[function(require,module,exports){
 //listen for these events
 var events = ['click', 'input', 'focusin', 'focusout', 'beforeunload', 'keydown', 'hashchange'];
 
@@ -438,7 +438,7 @@ module.exports = function(model){
 
 }
 
-},{"../utils/proper-case":34,"./mapping/mapping":17}],11:[function(require,module,exports){
+},{"../utils/proper-case":35,"./mapping/mapping":17}],11:[function(require,module,exports){
 module.exports = {};
 
 },{}],12:[function(require,module,exports){
@@ -635,7 +635,7 @@ new Action('CLEAR_PRIORITY', function(e){
   undoRedo.new([{id:id, operation:'setProp', data:{prop:'priority', value:null}}]);
 });
 
-},{"../../../../shared/operations/generate-id":37,"../../../../shared/text-processing/snap":42,"../../../dom/dom-helpers":2,"../../../operations-wrappers/undo-redo":29,"../../../utils/caret":32,"./get-id-from-dom-element":12,"./new-action":13,"./throttle":16}],15:[function(require,module,exports){
+},{"../../../../shared/operations/generate-id":38,"../../../../shared/text-processing/snap":43,"../../../dom/dom-helpers":2,"../../../operations-wrappers/undo-redo":29,"../../../utils/caret":32,"./get-id-from-dom-element":12,"./new-action":13,"./throttle":16}],15:[function(require,module,exports){
 var sync = require('../../../operations-wrappers/sync-stack');
 var domHelpers = require('../../../dom/dom-helpers');
 var caret = require('../../../utils/caret');
@@ -951,7 +951,7 @@ changeHistory.rollback = function(index){
   model.names = tree.model.names;
 }
 
-},{"../../shared/operations/Tree":35}],26:[function(require,module,exports){
+},{"../../shared/operations/Tree":36}],26:[function(require,module,exports){
 var model = require('../model/model');
 
 module.exports = function(actions){
@@ -1012,7 +1012,7 @@ module.exports = function(operations){
   return deepInverse;
 }
 
-},{"../../shared/operations/Tree":35,"../../shared/operations/get-deep-inverse":38,"../dom/draw-changes":3,"../model/model":24,"../temp-order-notes":30}],28:[function(require,module,exports){
+},{"../../shared/operations/Tree":36,"../../shared/operations/get-deep-inverse":39,"../dom/draw-changes":3,"../model/model":24,"../temp-order-notes":30}],28:[function(require,module,exports){
 var pollSeconds = 5;
 
 var operate = require('./operate');
@@ -1246,6 +1246,41 @@ function caretAtEnd(div){
 }
 
 },{}],33:[function(require,module,exports){
+module.exports = function(date){
+  date = new Date(date);
+  var days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  var today = new Date();
+  today.setHours(1,0,0,0);
+  date.setHours(1,0,0,0);
+  var fac = 86400000;
+  var diff = Math.floor((date - today) / fac);
+  if(diff == 0) return 'today';
+  else if(diff == 1) return 'tomorrow';
+  else if(diff == -1) return 'yesterday';
+  else if(diff < -1){
+    if(diff > -14){
+      return -diff+' days ago';
+    }
+    else return Math.floor(-diff / 7)+' weeks ago';
+  }
+  else{
+    if(diff >= 14) return 'in '+Math.round(diff / 7)+' weeks';
+    else if((diff + day(today)) <= 6) return days[day(today, diff)];
+    else if((diff + day(today)) <= 13) return 'next '+days[day(today, diff)];
+    else return 'in '+diff+' days';
+  }
+}
+
+function day(date, mod){
+  if(!mod) mod = 0;
+  date.setDate(date.getDate() + mod);
+  var day = date.getDay();
+  if(day == 0) day = 6;
+  else day = day-1;
+  return day;
+}
+
+},{}],34:[function(require,module,exports){
 module.exports = function(el){
   if(el.closest('.holdingPen') == null){
     //make sure it's not a hidden child of a collapsed element
@@ -1258,12 +1293,12 @@ module.exports = function(el){
   else return false;
 }
 
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 module.exports = function(string){
   return string[0].toUpperCase()+string.substr(1).toLowerCase();
 }
 
-},{}],35:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 const defaultNoteObject = require('./default-note-object');
 const waterfalls = require('./waterfalls');
 
@@ -1424,7 +1459,7 @@ Tree.prototype.apply = function(changes){
 
 module.exports = Tree;
 
-},{"./default-note-object":36,"./waterfalls":39}],36:[function(require,module,exports){
+},{"./default-note-object":37,"./waterfalls":40}],37:[function(require,module,exports){
 module.exports = function(id){
   return {
     id: id,
@@ -1432,12 +1467,12 @@ module.exports = function(id){
   };
 }
 
-},{}],37:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 module.exports = function(){
   return btoa(Date.now().toString()+Math.round(Math.random()*100000).toString());
 }
 
-},{}],38:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 module.exports = function(changes, model){
   var inverseChanges = {};
   Object.getOwnPropertyNames(changes).forEach(function(id){
@@ -1450,7 +1485,7 @@ module.exports = function(changes, model){
   return inverseChanges;
 }
 
-},{}],39:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 module.exports = {
   //triggerProp: waterfallProp,
   "isComplete": "isDescendantOfComplete",
@@ -1458,7 +1493,7 @@ module.exports = {
   "dueDate": "effectiveDueDate"
 };
 
-},{}],40:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 var undoRedo = require('../../frontend/operations-wrappers/undo-redo');
 
 module.exports = function(id, text, cases){
@@ -1519,14 +1554,14 @@ module.exports = function(id, text, cases){
   if(operations.length > 0) undoRedo.new(operations);
 }
 
-},{"../../frontend/operations-wrappers/undo-redo":29}],41:[function(require,module,exports){
+},{"../../frontend/operations-wrappers/undo-redo":29}],42:[function(require,module,exports){
 module.exports = [
   'normal',
   'important',
   'critical'
 ];
 
-},{}],42:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 const process = require('./generic-process-text');
 const priority = require('./properties/priority');
 
@@ -1562,9 +1597,9 @@ var cases = [
     regex: /due (?:(today|tomorrow)|(next )?((?:mon|tues|wednes|thurs|fri|satur|sun)day)|(next week|next month)|in (?:(1) (week|day|month)|(\d*) (days|weeks|months)))/,
     defaultWrap: true,
     getUpdateValue: (match, groups, original)=>{
+      console.log(groups);
       var date = new Date();
-      date.setHours(9,0,0,0);
-      groups.unshift('');
+      date.setHours(2,0,0,0);
       if(groups[1]){
         if(groups[1] == 'today') return date;
         else{
@@ -1626,4 +1661,28 @@ var cases = [
   }
 ];
 
-},{"./generic-process-text":40,"./properties/priority":41}]},{},[1]);
+
+function getDay(date, mod){
+  if(!mod) mod = 0;
+  date.setDate(date.getDate() + mod);
+  var day = date.getDay();
+  if(day == 0) day = 6;
+  else day = day-1;
+  return day;
+}
+
+function getNextXDay(date, day, explicitNext){ //0 = monday
+  var dateDay = getDay(date);
+  var diff;
+  if(day==dateDay) diff = 7;
+  if(day<dateDay) diff = 7-(dateDay-day);
+  if(day>dateDay){
+    if(explicitNext) diff = day-dateDay+7;
+    else diff = day-dateDay;
+  }
+  var tempDate = new Date();
+  tempDate.setDate(date.getDate() + diff);
+  return tempDate;
+}
+
+},{"./generic-process-text":41,"./properties/priority":42}]},{},[1]);

@@ -1,4 +1,5 @@
 module.exports = function(date){
+  date = new Date(date);
   var days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
   var today = new Date();
   today.setHours(1,0,0,0);

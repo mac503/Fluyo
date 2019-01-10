@@ -33,9 +33,9 @@ var cases = [
     regex: /due (?:(today|tomorrow)|(next )?((?:mon|tues|wednes|thurs|fri|satur|sun)day)|(next week|next month)|in (?:(1) (week|day|month)|(\d*) (days|weeks|months)))/,
     defaultWrap: true,
     getUpdateValue: (match, groups, original)=>{
+      console.log(groups);
       var date = new Date();
-      date.setHours(9,0,0,0);
-      groups.unshift('');
+      date.setHours(2,0,0,0);
       if(groups[1]){
         if(groups[1] == 'today') return date;
         else{
@@ -96,3 +96,27 @@ var cases = [
     }
   }
 ];
+
+
+function getDay(date, mod){
+  if(!mod) mod = 0;
+  date.setDate(date.getDate() + mod);
+  var day = date.getDay();
+  if(day == 0) day = 6;
+  else day = day-1;
+  return day;
+}
+
+function getNextXDay(date, day, explicitNext){ //0 = monday
+  var dateDay = getDay(date);
+  var diff;
+  if(day==dateDay) diff = 7;
+  if(day<dateDay) diff = 7-(dateDay-day);
+  if(day>dateDay){
+    if(explicitNext) diff = day-dateDay+7;
+    else diff = day-dateDay;
+  }
+  var tempDate = new Date();
+  tempDate.setDate(date.getDate() + diff);
+  return tempDate;
+}

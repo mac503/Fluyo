@@ -2,10 +2,10 @@ var domHelpers = require('./dom-helpers');
 var caret = require('../utils/caret');
 var isVisible = require('../utils/is-visible');
 var properCase = require('../utils/proper-case');
+var friendlyDate = require('../utils/friendly-date');
 var priority = require('../../shared/text-processing/properties/priority');
 
 module.exports = function(div, changes, initialDraw=false){
-  console.log(changes);
   //list changes which get applied as class changes
   ['isParent', 'isCollapsed', 'isComplete', 'isDescendantOfComplete'].forEach(function(prop){
     if(changes.hasOwnProperty(prop)){
@@ -36,7 +36,7 @@ module.exports = function(div, changes, initialDraw=false){
     {
       prop:'effectiveDueDate',
       selector: '.dueDate',
-      process: x=>x.substr(0,10)
+      process: x=>friendlyDate(x)
     },
     {
       prop:'dueDate',
