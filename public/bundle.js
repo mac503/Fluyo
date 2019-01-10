@@ -13,7 +13,7 @@ require('./modules/frontend/model/model').initialise(function(model){
   //perhaps load any display settings saved in localstorage if necessary?
 });
 
-},{"./modules/frontend/dom/initial-draw":5,"./modules/frontend/events/listeners":10,"./modules/frontend/model/model":24,"./modules/frontend/operations-wrappers/change-history":25}],2:[function(require,module,exports){
+},{"./modules/frontend/dom/initial-draw":5,"./modules/frontend/events/listeners":10,"./modules/frontend/model/model":25,"./modules/frontend/operations-wrappers/change-history":26}],2:[function(require,module,exports){
 module.exports = {
   prevSibling: function(el, filters){
     if(filters == 'visible'){
@@ -254,7 +254,7 @@ module.exports = function(id){
       <div class='contentHolder'><div class='dragDropTop'></div><div class='dragDropBottom'></div>
         <div class='content' contenteditable='true' data-events-handler='note-content'></div>
         <div class='priority'><span class='clearPriority' data-events-handler='clear-priority'></span></div>
-        <div class='dueDate' data-date=''><span class='clearDate'></span></div>
+        <div class='dueDate' data-date=''><span class='clearDate' data-events-handler='clear-date'></span></div>
       </div>
     </div>
     <div class='children'></div>
@@ -298,7 +298,7 @@ module.exports = function(id, changes){
   });
 }
 
-},{"../model/model":24,"./new-note-div":6,"./update-note-node":9}],9:[function(require,module,exports){
+},{"../model/model":25,"./new-note-div":6,"./update-note-node":9}],9:[function(require,module,exports){
 var domHelpers = require('./dom-helpers');
 var caret = require('../utils/caret');
 var isVisible = require('../utils/is-visible');
@@ -408,7 +408,7 @@ module.exports = function(div, changes, initialDraw=false){
   }
 }
 
-},{"../../shared/text-processing/properties/priority":42,"../utils/caret":32,"../utils/friendly-date":33,"../utils/is-visible":34,"../utils/proper-case":35,"./dom-helpers":2}],10:[function(require,module,exports){
+},{"../../shared/text-processing/properties/priority":43,"../utils/caret":33,"../utils/friendly-date":34,"../utils/is-visible":35,"../utils/proper-case":36,"./dom-helpers":2}],10:[function(require,module,exports){
 //listen for these events
 var events = ['click', 'input', 'focusin', 'focusout', 'beforeunload', 'keydown', 'hashchange'];
 
@@ -438,7 +438,7 @@ module.exports = function(model){
 
 }
 
-},{"../utils/proper-case":35,"./mapping/mapping":17}],11:[function(require,module,exports){
+},{"../utils/proper-case":36,"./mapping/mapping":17}],11:[function(require,module,exports){
 module.exports = {};
 
 },{}],12:[function(require,module,exports){
@@ -635,7 +635,12 @@ new Action('CLEAR_PRIORITY', function(e){
   undoRedo.new([{id:id, operation:'setProp', data:{prop:'priority', value:null}}]);
 });
 
-},{"../../../../shared/operations/generate-id":38,"../../../../shared/text-processing/snap":43,"../../../dom/dom-helpers":2,"../../../operations-wrappers/undo-redo":29,"../../../utils/caret":32,"./get-id-from-dom-element":12,"./new-action":13,"./throttle":16}],15:[function(require,module,exports){
+new Action('CLEAR_DATE', function(e){
+  var id = getId(e.target);
+  undoRedo.new([{id:id, operation:'setProp', data:{prop:'dueDate', value:null}}]);
+});
+
+},{"../../../../shared/operations/generate-id":39,"../../../../shared/text-processing/snap":44,"../../../dom/dom-helpers":2,"../../../operations-wrappers/undo-redo":30,"../../../utils/caret":33,"./get-id-from-dom-element":12,"./new-action":13,"./throttle":16}],15:[function(require,module,exports){
 var sync = require('../../../operations-wrappers/sync-stack');
 var domHelpers = require('../../../dom/dom-helpers');
 var caret = require('../../../utils/caret');
@@ -694,7 +699,7 @@ new Action('BEFORE_UNLOAD', function(e){
   return sync.isClear();
 });
 
-},{"../../../dom/dom-helpers":2,"../../../operations-wrappers/sync-stack":28,"../../../utils/caret":32,"./new-action":13}],16:[function(require,module,exports){
+},{"../../../dom/dom-helpers":2,"../../../operations-wrappers/sync-stack":29,"../../../utils/caret":33,"./new-action":13}],16:[function(require,module,exports){
 var undoRedo = require('../../../operations-wrappers/undo-redo');
 
 var timeoutSeconds = 1;
@@ -727,7 +732,7 @@ Throttle.prototype.clear = function(){
 
 module.exports = new Throttle(timeoutSeconds);
 
-},{"../../../operations-wrappers/undo-redo":29}],17:[function(require,module,exports){
+},{"../../../operations-wrappers/undo-redo":30}],17:[function(require,module,exports){
 module.exports = mapping = [];
 
 Mapping = function(name, eventsToActions){
@@ -751,6 +756,7 @@ require('./specifics/panel');
 require('./specifics/window');
 require('./specifics/body');
 require('./specifics/clear-priority');
+require('./specifics/clear-date');
 
 require('./actions/operation-actions');
 require('./actions/superficial-actions');
@@ -758,7 +764,7 @@ actions = require('./actions/actions');
 
 window.mapping = mapping;
 
-},{"./actions/actions":11,"./actions/operation-actions":14,"./actions/superficial-actions":15,"./specifics/body":18,"./specifics/clear-priority":19,"./specifics/note-content":20,"./specifics/panel":21,"./specifics/toggle":22,"./specifics/window":23}],18:[function(require,module,exports){
+},{"./actions/actions":11,"./actions/operation-actions":14,"./actions/superficial-actions":15,"./specifics/body":18,"./specifics/clear-date":19,"./specifics/clear-priority":20,"./specifics/note-content":21,"./specifics/panel":22,"./specifics/toggle":23,"./specifics/window":24}],18:[function(require,module,exports){
 new Mapping('body', {
   'keydown': function(e){
     switch(e.keyCode){
@@ -787,11 +793,16 @@ new Mapping('body', {
 });
 
 },{}],19:[function(require,module,exports){
+new Mapping('clear-date', {
+  'click': 'CLEAR_DATE'
+});
+
+},{}],20:[function(require,module,exports){
 new Mapping('clear-priority', {
   'click': 'CLEAR_PRIORITY'
 });
 
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 var caret = require('../../../utils/caret');
 
 new Mapping('note-content', {
@@ -848,17 +859,17 @@ new Mapping('note-content', {
   'focusout': 'FORCE_THROTTLE'
 });
 
-},{"../../../utils/caret":32}],21:[function(require,module,exports){
+},{"../../../utils/caret":33}],22:[function(require,module,exports){
 new Mapping('panel', {
   'click': 'PANEL_SLIDE'
 });
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 new Mapping('toggle', {
   'click': 'TOGGLE_CHILDREN'
 });
 
-},{}],23:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 var domHelpers = require('../../../dom/dom-helpers');
 
 new Mapping('window', {
@@ -884,7 +895,7 @@ new Mapping('window', {
   }
 });
 
-},{"../../../dom/dom-helpers":2}],24:[function(require,module,exports){
+},{"../../../dom/dom-helpers":2}],25:[function(require,module,exports){
 var ajax = require('../utils/ajax');
 
 module.exports = model = {};
@@ -912,7 +923,7 @@ model.update = function(newModel){
   });
 }
 
-},{"../utils/ajax":31}],25:[function(require,module,exports){
+},{"../utils/ajax":32}],26:[function(require,module,exports){
 var Tree = require('../../shared/operations/Tree');
 
 module.exports = changeHistory = {};
@@ -951,7 +962,7 @@ changeHistory.rollback = function(index){
   model.names = tree.model.names;
 }
 
-},{"../../shared/operations/Tree":36}],26:[function(require,module,exports){
+},{"../../shared/operations/Tree":37}],27:[function(require,module,exports){
 var model = require('../model/model');
 
 module.exports = function(actions){
@@ -982,7 +993,7 @@ function getInverse(action){
   }
 }
 
-},{"../model/model":24}],27:[function(require,module,exports){
+},{"../model/model":25}],28:[function(require,module,exports){
 //carry out the operation on the current model, update the results, and draw the results
 var model = require('../model/model');
 var Tree = require('../../shared/operations/Tree');
@@ -1012,7 +1023,7 @@ module.exports = function(operations){
   return deepInverse;
 }
 
-},{"../../shared/operations/Tree":36,"../../shared/operations/get-deep-inverse":39,"../dom/draw-changes":3,"../model/model":24,"../temp-order-notes":30}],28:[function(require,module,exports){
+},{"../../shared/operations/Tree":37,"../../shared/operations/get-deep-inverse":40,"../dom/draw-changes":3,"../model/model":25,"../temp-order-notes":31}],29:[function(require,module,exports){
 var pollSeconds = 5;
 
 var operate = require('./operate');
@@ -1089,7 +1100,7 @@ window.setInterval(sync.sync, pollSeconds * 1000);
 
 window.sync = sync;
 
-},{"../utils/ajax":31,"./change-history":25,"./operate":27}],29:[function(require,module,exports){
+},{"../utils/ajax":32,"./change-history":26,"./operate":28}],30:[function(require,module,exports){
 var syncStack = require('./sync-stack');
 var getInverse = require('./get-inverse');
 
@@ -1127,7 +1138,7 @@ undoRedo.undo = function(){
 
 window.undoRedo = undoRedo;
 
-},{"./get-inverse":26,"./sync-stack":28}],30:[function(require,module,exports){
+},{"./get-inverse":27,"./sync-stack":29}],31:[function(require,module,exports){
 module.exports = function(childrenRaw){
   var children = [];
   var precedingId = null;
@@ -1139,7 +1150,7 @@ module.exports = function(childrenRaw){
   return children;
 }
 
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 function ajax(method, callback, data){
 
   if(data == null) data = {};
@@ -1177,7 +1188,7 @@ module.exports = {
   put
 }
 
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 module.exports = {
   get,
   set,
@@ -1245,9 +1256,10 @@ function caretAtEnd(div){
   else return false;
 }
 
-},{}],33:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 module.exports = function(date){
   date = new Date(date);
+  if(date == 'Invalid Date') return '';
   var days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
   var today = new Date();
   today.setHours(1,0,0,0);
@@ -1280,7 +1292,7 @@ function day(date, mod){
   return day;
 }
 
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 module.exports = function(el){
   if(el.closest('.holdingPen') == null){
     //make sure it's not a hidden child of a collapsed element
@@ -1293,12 +1305,12 @@ module.exports = function(el){
   else return false;
 }
 
-},{}],35:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 module.exports = function(string){
   return string[0].toUpperCase()+string.substr(1).toLowerCase();
 }
 
-},{}],36:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 const defaultNoteObject = require('./default-note-object');
 const waterfalls = require('./waterfalls');
 
@@ -1459,7 +1471,7 @@ Tree.prototype.apply = function(changes){
 
 module.exports = Tree;
 
-},{"./default-note-object":37,"./waterfalls":40}],37:[function(require,module,exports){
+},{"./default-note-object":38,"./waterfalls":41}],38:[function(require,module,exports){
 module.exports = function(id){
   return {
     id: id,
@@ -1467,12 +1479,12 @@ module.exports = function(id){
   };
 }
 
-},{}],38:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 module.exports = function(){
   return btoa(Date.now().toString()+Math.round(Math.random()*100000).toString());
 }
 
-},{}],39:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 module.exports = function(changes, model){
   var inverseChanges = {};
   Object.getOwnPropertyNames(changes).forEach(function(id){
@@ -1485,7 +1497,7 @@ module.exports = function(changes, model){
   return inverseChanges;
 }
 
-},{}],40:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 module.exports = {
   //triggerProp: waterfallProp,
   "isComplete": "isDescendantOfComplete",
@@ -1493,7 +1505,7 @@ module.exports = {
   "dueDate": "effectiveDueDate"
 };
 
-},{}],41:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 var undoRedo = require('../../frontend/operations-wrappers/undo-redo');
 
 module.exports = function(id, text, cases){
@@ -1554,14 +1566,14 @@ module.exports = function(id, text, cases){
   if(operations.length > 0) undoRedo.new(operations);
 }
 
-},{"../../frontend/operations-wrappers/undo-redo":29}],42:[function(require,module,exports){
+},{"../../frontend/operations-wrappers/undo-redo":30}],43:[function(require,module,exports){
 module.exports = [
   'normal',
   'important',
   'critical'
 ];
 
-},{}],43:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 const process = require('./generic-process-text');
 const priority = require('./properties/priority');
 
@@ -1685,4 +1697,4 @@ function getNextXDay(date, day, explicitNext){ //0 = monday
   return tempDate;
 }
 
-},{"./generic-process-text":41,"./properties/priority":42}]},{},[1]);
+},{"./generic-process-text":42,"./properties/priority":43}]},{},[1]);

@@ -21,6 +21,7 @@ require('./specifics/panel');
 require('./specifics/window');
 require('./specifics/body');
 require('./specifics/clear-priority');
+require('./specifics/clear-date');
 
 require('./actions/operation-actions');
 require('./actions/superficial-actions');

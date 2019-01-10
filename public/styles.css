@@ -302,7 +302,11 @@ div, input{
   content: attr(data-prop-effective-due-date);
   padding-left: .4em;
 }
-.dueDate .clearDate::after{
+.dueDate[data-prop-due-date]::before{
+  border-bottom: 1px solid black;
+  border-bottom-style: dotted;
+}
+.dueDate[data-prop-due-date] .clearDate::after{
   content: "\2716";
   color: gray;
   color: lightgray;

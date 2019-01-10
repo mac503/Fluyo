@@ -40,8 +40,8 @@ app.use(bodyParser.json());
 app.get('/reset', function(req, res){
   var notes = [
     {id:'DELETED', content:'', parentId:null},
-    {id:'OUTLINE', content:'', priority:2, effectivePriority:2, parentId:null},
-    {id:'INBOX', content:'', priority:1,  effectivePriority:1, parentId:null},
+    {id:'OUTLINE', content:'', priority:2, dueDate:0, parentId:null},
+    {id:'INBOX', content:'', priority:1, dueDate:0, parentId:null},
     {id:'NEW', content:'', parentId:null},
     {id:'1', content:'One', parentId:'OUTLINE'},
     {id:'2', content:'Two', parentId:'OUTLINE', precedingId:'1'},
