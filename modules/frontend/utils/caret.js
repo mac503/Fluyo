@@ -14,7 +14,7 @@ function get(el){
 }
 
 function set(el, pos){
-
+  if(pos > el.innerText.length) set(el, el.innerText.length);
   if(pos == null) return;
     // Loop through all child nodes
     for(var node of el.childNodes){

@@ -301,6 +301,7 @@ module.exports = function(id, changes){
 var domHelpers = require('./dom-helpers');
 var caret = require('../utils/caret');
 var isVisible = require('../utils/is-visible');
+var properCase = require('../utils/proper-case');
 
 module.exports = function(div, changes, initialDraw=false){
   //list changes which get applied as class changes
@@ -325,7 +326,7 @@ module.exports = function(div, changes, initialDraw=false){
     if(changes.hasOwnProperty(prop[0])){
       if(div.querySelector('.'+prop[1])) div.querySelector('.'+prop[1]).dataset['prop'+prop[0].substr(0,1).toUpperCase()+prop[0].substr(1)] = changes[prop[0]];
     }
-    else delete div.dataset['prop'+properCase(prop)];
+    else delete div.dataset['prop'+properCase(prop[0])];
   });
 
   //if we currently have focus on the content field, will need to reset the cursor after things have been changed
@@ -381,7 +382,7 @@ module.exports = function(div, changes, initialDraw=false){
   }
 }
 
-},{"../utils/caret":31,"../utils/is-visible":32,"./dom-helpers":2}],10:[function(require,module,exports){
+},{"../utils/caret":31,"../utils/is-visible":32,"../utils/proper-case":33,"./dom-helpers":2}],10:[function(require,module,exports){
 //listen for these events
 var events = ['click', 'input', 'focusin', 'focusout', 'beforeunload', 'keydown', 'hashchange'];
 
@@ -437,6 +438,7 @@ var getId = require('./get-id-from-dom-element');
 var throttle = require('./throttle');
 var generateId = require('../../../../shared/operations/generate-id');
 var domHelpers = require('../../../dom/dom-helpers');
+var snap = require('../../../../shared/text-processing/snap');
 
 //operations which require to go through the operations-wrappers
 new Action('INDENT', function(e){
@@ -592,14 +594,16 @@ new Action('REDO', function(e){
 });
 
 new Action('INPUT_CONTENT', function(e){
-  throttle.input(getId(e.target), e.target.innerText);
+  var id = getId(e.target);
+  snap(id, e.target.innerText);
+  throttle.input(id, e.target.innerText);
 });
 
 new Action('FORCE_THROTTLE', function(e){
   if(throttle.id) throttle.send();
 });
 
-},{"../../../../shared/operations/generate-id":36,"../../../dom/dom-helpers":2,"../../../operations-wrappers/undo-redo":28,"../../../utils/caret":31,"./get-id-from-dom-element":12,"./new-action":13,"./throttle":16}],15:[function(require,module,exports){
+},{"../../../../shared/operations/generate-id":36,"../../../../shared/text-processing/snap":40,"../../../dom/dom-helpers":2,"../../../operations-wrappers/undo-redo":28,"../../../utils/caret":31,"./get-id-from-dom-element":12,"./new-action":13,"./throttle":16}],15:[function(require,module,exports){
 var sync = require('../../../operations-wrappers/sync-stack');
 var domHelpers = require('../../../dom/dom-helpers');
 var caret = require('../../../utils/caret');
@@ -1152,7 +1156,7 @@ function get(el){
 }
 
 function set(el, pos){
-
+  if(pos > el.innerText.length) set(el, el.innerText.length);
   if(pos == null) return;
     // Loop through all child nodes
     for(var node of el.childNodes){
@@ -1320,6 +1324,7 @@ Tree.prototype.set = function(obj, prop, value, changes = {}){
   if(!changes[id]) changes[id] = {};
   changes[id][prop] = value;
   if(waterfalls.hasOwnProperty(prop)){
+    console.log('Waterfall exists for '+prop);
     changes = this.waterfall(obj, waterfalls[prop], value, prop, changes);
   }
   return changes;
@@ -1328,11 +1333,13 @@ Tree.prototype.set = function(obj, prop, value, changes = {}){
 Tree.prototype.waterfall = function(obj, prop, value, triggerProp, changes = {}){
   if(obj == null) return changes;
   var id = obj.id;
+  console.log('ID: '+id);
+  console.log(prop);
   if(!changes[id]) changes[id] = {};
   changes[id][prop] = value;
   var self = this;
   this.children(obj).forEach(child =>{
-    if(child[triggerProp] != 0 && child[triggerProp] != null) changes = self.waterfall(child, prop, value, triggerProp, changes);
+    if(child[triggerProp] == null) changes = self.waterfall(child, prop, value, triggerProp, changes);
   });
   return changes;
 }
@@ -1402,4 +1409,95 @@ module.exports = {
   "priority": "effectivePriority"
 };
 
-},{}]},{},[1]);
+},{}],39:[function(require,module,exports){
+var undoRedo = require('../../frontend/operations-wrappers/undo-redo');
+
+module.exports = function(id, text, cases){
+  /*EXAMPLE CASE:
+    {
+      prop: //property to update based on text found,
+      regex: //regexp to match, include /g if necessary,
+      defaultWrap: //boolean, if true regex gets wrapped in space/start ... space/end,
+      getUpdateValue: //function(match, groups, original) to return value to set update prop to,
+      getReplaceValue: //function(match, groups, original) to return value to replace match with in string,
+      noMatchUpdateValue: //value to update update prop to if no match found
+    }
+  */
+
+  /*
+  make a copy of the text
+  make an empty
+  for each case
+    know what property to update
+    run the regex
+    if matches found
+      run the function to figure out the update value
+      add that to the list of operations
+      run the function to figure out the replace value
+      apply replace function to get the necessary replacement text
+    else matches not found
+      if there is a false value specified, apply that
+  if the text differs at all from the original, add a content change operation to the array
+  if there is anything in the array, send it to undoRedo
+  */
+  var processed = text;
+  var operations = [];
+  cases.forEach(rcase=>{
+    var regex = rcase.regex;
+    if(rcase.defaultWrap) regex = new RegExp('(^|\\s)'+regex.source+'(\\s|$)', regex.flags);
+    if(regex.test(processed)){
+      var result = regex.exec(processed);
+      if(rcase.hasOwnProperty('prop')) do{
+        var match = result[0];
+        var groups = result.slice(1);
+        var original = result.input;
+        var value = rcase.getUpdateValue(match, groups, original);
+        operations.push({id:id, operation:'setProp', data:{prop:rcase.prop, value:value}});
+      } while(regex.flags.includes('g') && (result = regex.exec(processed)) !== null);
+      if(rcase.hasOwnProperty('getReplaceValue')) processed = processed.replace(regex, (...arguments)=>{
+        var match = arguments[0];
+        var groups = arguments.slice(1, arguments.length-2);
+        var original = arguments[arguments.length-1];
+        return rcase.getReplaceValue(match, groups, original);
+      });
+    }
+    else if(rcase.hasOwnProperty('noMatchUpdateValue')){
+      operations.push({id:id, operation:'setProp', data:{prop:rcase.prop, value:rcase.noMatchUpdateValue}});
+    }
+  });
+  if(processed != text) operations.push({id:id, operation:'setProp', data:{prop:'content', value:processed}});
+
+  if(operations.length > 0) undoRedo.new(operations);
+}
+
+},{"../../frontend/operations-wrappers/undo-redo":28}],40:[function(require,module,exports){
+const process = require('./generic-process-text');
+
+module.exports = function(id, text){
+  return process(id, text, cases);
+}
+/*EXAMPLE CASE:
+  {
+    prop: //property to update based on text found,
+    regex: //regexp to match, include /g if necessary,
+    defaultWrap: //boolean, if true regex gets wrapped in space/start ... space/end,
+    getUpdateValue: //function(match, groups, original) to return value to set update prop to,
+    getReplaceValue: //function(match, groups, original) to return value to replace match with in string,
+    noMatchUpdateValue: //value to update update prop to if no match found
+  }
+*/
+var cases = [
+  {
+    prop: 'priority',
+    regex: /\*(normal|important|critical)/,
+    defaultWrap: true,
+    getUpdateValue: (match, groups, original)=>{
+      return ['normal','important','critical'].indexOf(groups[1]);
+    },
+    getReplaceValue: (match, groups, original)=>{
+      return '';
+    }
+  }
+];
+
+},{"./generic-process-text":39}]},{},[1]);

@@ -1,6 +1,7 @@
 var domHelpers = require('./dom-helpers');
 var caret = require('../utils/caret');
 var isVisible = require('../utils/is-visible');
+var properCase = require('../utils/proper-case');
 
 module.exports = function(div, changes, initialDraw=false){
   //list changes which get applied as class changes
@@ -25,7 +26,7 @@ module.exports = function(div, changes, initialDraw=false){
     if(changes.hasOwnProperty(prop[0])){
       if(div.querySelector('.'+prop[1])) div.querySelector('.'+prop[1]).dataset['prop'+prop[0].substr(0,1).toUpperCase()+prop[0].substr(1)] = changes[prop[0]];
     }
-    else delete div.dataset['prop'+properCase(prop)];
+    else delete div.dataset['prop'+properCase(prop[0])];
   });
 
   //if we currently have focus on the content field, will need to reset the cursor after things have been changed

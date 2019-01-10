@@ -5,6 +5,7 @@ var getId = require('./get-id-from-dom-element');
 var throttle = require('./throttle');
 var generateId = require('../../../../shared/operations/generate-id');
 var domHelpers = require('../../../dom/dom-helpers');
+var snap = require('../../../../shared/text-processing/snap');
 
 //operations which require to go through the operations-wrappers
 new Action('INDENT', function(e){
@@ -160,7 +161,9 @@ new Action('REDO', function(e){
 });
 
 new Action('INPUT_CONTENT', function(e){
-  throttle.input(getId(e.target), e.target.innerText);
+  var id = getId(e.target);
+  snap(id, e.target.innerText);
+  throttle.input(id, e.target.innerText);
 });
 
 new Action('FORCE_THROTTLE', function(e){
