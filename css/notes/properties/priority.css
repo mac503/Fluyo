@@ -5,12 +5,23 @@
 .priority[data-prop-effective-priority]::before{
   content: attr(data-prop-effective-priority);
   display: inline-block;
-  border-left: 3px solid pink;
+  border-left: 3px solid;
   padding-left: 2px;
 }
 
+.priority[data-prop-effective-priority="normal"]::before{
+  border-left-color: lightgreen;
+}
+.priority[data-prop-effective-priority="important"]::before{
+  border-left-color: #ffbf00;
+}
+.priority[data-prop-effective-priority="critical"]::before{
+  border-left-color: pink;
+}
+
 .priority[data-prop-priority]::before{
-  border-left: 3px solid lightgreen;
+  border-bottom: 1px solid black;
+  border-bottom-style: dotted;
 }
 
 .priority[data-prop-priority] .clearPriority::after{
