@@ -22,6 +22,8 @@ require('./specifics/window');
 require('./specifics/body');
 require('./specifics/clear-priority');
 require('./specifics/clear-date');
+require('./specifics/date-indicator');
+require('./specifics/date-box');
 
 require('./actions/operation-actions');
 require('./actions/superficial-actions');

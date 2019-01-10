@@ -5,6 +5,7 @@
   left: 0px;
   user-select: none;
   font-size: 13px;
+  z-index: 1001;
 }
 .dateBox .shell{
   position: absolute;
@@ -65,4 +66,15 @@
   font-weight: bold;
   border: 1px solid black;
   padding: 1px;
+}
+
+.dateBox .clickCover{
+  position: fixed;
+  top: -50vh;
+  left: -50vw;
+  width: 200vh;
+  height: 200vw;
+  background-color: red;
+  z-index: 1000;
+  opacity: 0;
 }

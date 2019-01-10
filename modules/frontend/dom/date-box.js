@@ -51,13 +51,14 @@ function updateBox(date, div, selected){
   console.log(div);
 
   div.innerHTML = `
+  <div class='clickCover' data-events-handler='date-box-click-cover'></div>
   <div class='shell'>
-    <div class='monthYear'><span class='changeMonth' data-date='${prevMonthDate.getTime()}'>&#8592;</span>${month} ${year}<span class='changeMonth' data-date='${nextMonthDate.getTime()}'>&#8594;</span></div>
+    <div class='monthYear'><span class='changeMonth' data-date='${prevMonthDate.getTime()}' data-events-handler='date-box-change-month'>&#8592;</span>${month} ${year}<span class='changeMonth' data-date='${nextMonthDate.getTime()}' data-events-handler='date-box-change-month'>&#8594;</span></div>
     <div class='days'>
       ${days.map(x=> `<div>${x}</div>`).join('')}
     </div>
     <div class='dates'>
-      ${dates.map((x,i) => `${i%7 == 0 ? `<div class="row">` : ''}<div data-date="${x.getTime()}" class="dateChoice ${x.getMonth() == date.getMonth() ? '' : ' otherMonth'}${(x.getTime() == today.getTime()) ? ' today' : ''}${(x.getTime() == selected.getTime()) ? ' selected' : ''}">${x.getDate()}</div>${i%7 == 6 ? `</div>` : ''}`).join('')}
+      ${dates.map((x,i) => `${i%7 == 0 ? `<div class="row">` : ''}<div data-date="${x.getTime()}" class="dateChoice ${x.getMonth() == date.getMonth() ? '' : ' otherMonth'}${(x.getTime() == today.getTime()) ? ' today' : ''}${(x.getTime() == selected.getTime()) ? ' selected' : ''}" data-events-handler='date-box-date'>${x.getDate()}</div>${i%7 == 6 ? `</div>` : ''}`).join('')}
     </div>
   </div>
   `;
