@@ -763,7 +763,7 @@ new Action('TOGGLE_COMPLETE', function(e, model){
   undoRedo.new([{id:id, operation:'setProp', data:{prop:'isComplete', value:newValue}}]);
 });
 
-new Action('BACKSPACE_DELETE_NOTE', function(e){
+new Action('BACKSPACE_DELETE_NOTE', function(e, model){
   e.preventDefault();
   var id = getId(e.target);
   var prev = domHelpers.prevSibling(e.target);
@@ -772,7 +772,7 @@ new Action('BACKSPACE_DELETE_NOTE', function(e){
     undoRedo.new([{id:prev.dataset.id, operation:'move', data:{parentId:'DELETED', precedingId:null}}]);
     //NOW UNNECESSARY TODO REMOVE e.target.focus();
   }
-  else if(e.target.innerText == ''){
+  else if(e.target.innerText == '' && model.names[id].isParent == false){
     undoRedo.new([{id:id, operation:'move', data:{parentId:'DELETED', precedingId:null}}]);
     /*NOW UNNECESSARY TODO REMOVE
     if(prev) prev.querySelector('.content').focus();
