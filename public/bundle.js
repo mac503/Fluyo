@@ -367,7 +367,7 @@ module.exports = function(id){
       <div class='dragDropHelperCover'></div>
       <div class='left'>
         <div class='toggle' data-events-handler='toggle'></div>
-        <div class='bullet' draggable='true' data-events-handler='bullet'></div>
+        <div class='bullet' draggable='true' data-events-handler-dragenter='drag-drop-helper' data-events-handler='bullet'></div>
       </div>
       <div class='contentHolder'>
         <div class='content' contenteditable='true' data-events-handler='note-content'></div>
@@ -418,7 +418,7 @@ module.exports = function(id, changes){
       var component = parentDiv.closest('[data-outline-component]');
       if(component.querySelector(`[data-id="${id}"]`) == null){
         var div = newNoteDiv(id);
-        parentDiv.querySelector('.holdingPen').appendChild(div);
+        parentDiv.querySelector('.children').appendChild(div);
         //need to apply everything from the model unfortunately
         var currentState = JSON.parse(JSON.stringify(model.names[id]));
         updateNoteNode(div, currentState);
@@ -542,7 +542,7 @@ module.exports = function(div, changes, initialDraw=false){
 
 },{"../../shared/text-processing/properties/priority":49,"../utils/caret":39,"../utils/friendly-date":40,"../utils/is-visible":41,"../utils/proper-case":42,"./dom-helpers":3}],11:[function(require,module,exports){
 //listen for these events
-var events = ['click', 'input', 'focusin', 'focusout', 'beforeunload', 'keydown', 'hashchange', 'dragstart', 'dragenter', 'dragend', 'drop', 'dragover'];
+var events = ['click', 'input', 'focusin', 'focusout', 'beforeunload', 'keydown', 'hashchange', 'dragstart', 'dragenter', 'dragend'];
 
 var properCase = require('../utils/proper-case');
 var mapping = require('./mapping/mapping');
@@ -587,6 +587,15 @@ new Action('DRAGSTART', function(e){
 });
 
 new Action('DRAGEND', function(e){
+  if(document.querySelector('.hover')){
+    var originId = document.querySelector('.dragOrigin').dataset.id;
+    var hover = document.querySelector('.hover');
+    var id = getId(hover);
+    var parentId = model.names[id].parentId;
+    if(hover.classList.contains('dragDropHelperTop')) undoRedo.new([{id:originId, operation:'move', data:{parentId:parentId, precedingId:null}}]);
+    else if(hover.classList.contains('dragDropHelperBottom')) undoRedo.new([{id:originId, operation:'move', data:{parentId:parentId, precedingId:id}}]);
+    else if(hover.classList.contains('dragDropHelperFirstChild')) undoRedo.new([{id:originId, operation:'move', data:{parentId:id, precedingId:null}}]);
+  }
   document.body.classList.remove('dragging');
   [].forEach.call(document.querySelectorAll('.dragOrigin'), function(el){
     el.classList.remove('dragOrigin');
@@ -612,18 +621,6 @@ function removeHovers(){
     el.classList.remove('hover');
   });
 }
-
-new Action('ALLOW_DROP', function(e){
-  e.preventDefault();
-});
-
-new Action('DROP_TO_OUTLINE_ABOVE', function(e){
-  e.preventDefault();
-  var id = getId(e.target);
-  var parentId = model.names[id].parentId;
-  var originId = document.querySelector('.dragOrigin').dataset.id;
-  undoRedo.new([{id:originId, operation:'move', data:{parentId:parentId, precedingId:null}}]);
-});
 
 },{"../../../model/model":31,"./get-id-from-dom-element":14,"./new-action":15}],14:[function(require,module,exports){
 module.exports = function(element){
@@ -1046,20 +1043,7 @@ new Mapping('date-indicator', {
 
 },{}],26:[function(require,module,exports){
 new Mapping('drag-drop-helper', {
-  'dragenter': 'DRAGENTER',
-  'dragover': 'ALLOW_DROP'
-});
-
-new Mapping('drag-drop-helper-top', {
-  'drop': 'DROP_TO_OUTLINE_ABOVE'
-});
-
-new Mapping('drag-drop-helper-top', {
-  'drop': 'DROP_TO_OUTLINE_ABOVE'
-});
-
-new Mapping('drag-drop-helper-top', {
-  'drop': 'DROP_TO_OUTLINE_ABOVE'
+  'dragenter': 'DRAGENTER'
 });
 
 },{}],27:[function(require,module,exports){

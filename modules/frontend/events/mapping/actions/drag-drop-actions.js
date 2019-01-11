@@ -11,6 +11,15 @@ new Action('DRAGSTART', function(e){
 });
 
 new Action('DRAGEND', function(e){
+  if(document.querySelector('.hover')){
+    var originId = document.querySelector('.dragOrigin').dataset.id;
+    var hover = document.querySelector('.hover');
+    var id = getId(hover);
+    var parentId = model.names[id].parentId;
+    if(hover.classList.contains('dragDropHelperTop')) undoRedo.new([{id:originId, operation:'move', data:{parentId:parentId, precedingId:null}}]);
+    else if(hover.classList.contains('dragDropHelperBottom')) undoRedo.new([{id:originId, operation:'move', data:{parentId:parentId, precedingId:id}}]);
+    else if(hover.classList.contains('dragDropHelperFirstChild')) undoRedo.new([{id:originId, operation:'move', data:{parentId:id, precedingId:null}}]);
+  }
   document.body.classList.remove('dragging');
   [].forEach.call(document.querySelectorAll('.dragOrigin'), function(el){
     el.classList.remove('dragOrigin');
@@ -36,15 +45,3 @@ function removeHovers(){
     el.classList.remove('hover');
   });
 }
-
-new Action('ALLOW_DROP', function(e){
-  e.preventDefault();
-});
-
-new Action('DROP_TO_OUTLINE_ABOVE', function(e){
-  e.preventDefault();
-  var id = getId(e.target);
-  var parentId = model.names[id].parentId;
-  var originId = document.querySelector('.dragOrigin').dataset.id;
-  undoRedo.new([{id:originId, operation:'move', data:{parentId:parentId, precedingId:null}}]);
-});

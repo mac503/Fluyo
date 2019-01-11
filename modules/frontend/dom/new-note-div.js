@@ -10,7 +10,7 @@ module.exports = function(id){
       <div class='dragDropHelperCover'></div>
       <div class='left'>
         <div class='toggle' data-events-handler='toggle'></div>
-        <div class='bullet' draggable='true' data-events-handler='bullet'></div>
+        <div class='bullet' draggable='true' data-events-handler-dragenter='drag-drop-helper' data-events-handler='bullet'></div>
       </div>
       <div class='contentHolder'>
         <div class='content' contenteditable='true' data-events-handler='note-content'></div>

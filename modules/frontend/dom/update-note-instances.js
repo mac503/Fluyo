@@ -17,7 +17,7 @@ module.exports = function(id, changes){
       var component = parentDiv.closest('[data-outline-component]');
       if(component.querySelector(`[data-id="${id}"]`) == null){
         var div = newNoteDiv(id);
-        parentDiv.querySelector('.holdingPen').appendChild(div);
+        parentDiv.querySelector('.children').appendChild(div);
         //need to apply everything from the model unfortunately
         var currentState = JSON.parse(JSON.stringify(model.names[id]));
         updateNoteNode(div, currentState);

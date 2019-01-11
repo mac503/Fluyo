@@ -62,3 +62,7 @@
 body:not(.dragging) .dragDropHelperTop, body:not(.dragging) .dragDropHelperBottom, body:not(.dragging) .dragDropHelperCover, body:not(.dragging) .dragDropHelperFirstChild{
   display: none;
 }
+
+.bullet.hover{
+  background-color: lightblue;
+}
