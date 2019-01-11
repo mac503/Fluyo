@@ -1,8 +1,9 @@
 .dragDropHelperTop{
   display: block;
-  background-color: rgba(0,0,0,0);
+  background-color: rgba(255,0,0,0);
   float: left;
   position: absolute;
+  top: -0.1em;
   width: calc(100% - 1.7em);
   margin-left: 1.7em;
   height: 1em;
@@ -15,36 +16,49 @@
 
 .dragDropHelperBottom{
   display: block;
-  background-color: rgba(0,0,0,0);
+  background-color: rgba(0,255,0,0);
   float: left;
   position: absolute;
   bottom: 0;
   width: calc(100% - 1.7em);
   margin-left: 1.7em;
-  height: 1.7em;
+  height: 1em;
   border-bottom: 3px solid transparent;
-  z-index: 102;
+  z-index: 103;
 }
 .dragDropHelperBottom.hover{
   border-bottom-color: lightblue;
 }
 
+.dragDropHelperCover{
+  display: block;
+  background-color: rgba(0,255,255,0);
+  float: left;
+  position: absolute;
+  bottom: -1em;
+  width: calc(100% - 1.7em);
+  margin-left: 1.7em;
+  height: 2em;
+  border-bottom: 3px solid transparent;
+  z-index: 102;
+}
+
 .dragDropHelperFirstChild{
   display: block;
-  background-color: rgba(0,0,0,0);
+  background-color: rgba(0,0,255,0);
   float: left;
   position: absolute;
   bottom: 0;
   width: calc(100% - 3.7em);
   margin-left: 3.7em;
-  height: 1.7em;
+  height: 1em;
   border-bottom: 3px solid transparent;
-  z-index: 103;
+  z-index: 104;
 }
 .dragDropHelperFirstChild.hover{
   border-bottom-color: lightblue;
 }
 
-body:not(.dragging) .dragDropHelperTop, body:not(.dragging) .dragDropHelperBottom, body:not(.dragging) .dragDropHelperFirstChild{
+body:not(.dragging) .dragDropHelperTop, body:not(.dragging) .dragDropHelperBottom, body:not(.dragging) .dragDropHelperCover, body:not(.dragging) .dragDropHelperFirstChild{
   display: none;
 }

@@ -7,6 +7,7 @@ module.exports = function(id){
       <div class='dragDropHelperTop' data-events-handler-dragenter='drag-drop-helper'></div>
       <div class='dragDropHelperBottom' data-events-handler-dragenter='drag-drop-helper'></div>
       <div class='dragDropHelperFirstChild' data-events-handler-dragenter='drag-drop-helper'></div>
+      <div class='dragDropHelperCover'></div>
       <div class='left'>
         <div class='toggle' data-events-handler='toggle'></div>
         <div class='bullet' draggable='true' data-events-handler='bullet'></div>
