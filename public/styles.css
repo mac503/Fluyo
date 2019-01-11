@@ -137,12 +137,15 @@ div, input{
      -moz-box-shadow:0 1px 4px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 0, 0, 0.1);
           box-shadow:0 1px 4px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 0, 0, 0.1);
   cursor: pointer;
-  transition: all .2s;
+  transform: skew(-3deg, -9deg);
+  transition: all .1s ease-out;
 }
 
 .panel .corner:hover{
   width: 1.5em;
   height: 1.5em;
+  transform: skew(-2deg, -7deg);
+  transition: all .2s cubic-bezier(0.645, 0.045, 0.355, 1);
 }
 
 .panel>:nth-child(3){

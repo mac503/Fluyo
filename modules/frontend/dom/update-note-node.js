@@ -69,7 +69,7 @@ module.exports = function(div, changes, initialDraw=false){
   //position changes - what to do if div should no longer be there? (moved out of inbox, or is deleted) - move to holdingPen
   if(changes.hasOwnProperty('parentId')){
     var parentDiv = div.closest('[data-outline-component]').querySelector(`[data-id="${changes.parentId}"] .children`);
-    if(changes.parentId == 'DELETED' || changes.parentId == 'NEW') parentDiv = div.closest('[data-outline-component]').parentNode.querySelector('.holdingPen');
+    if(parentDiv == null || changes.parentId == 'DELETED' || changes.parentId == 'NEW') parentDiv = div.closest('[data-outline-component]').parentNode.querySelector('.holdingPen');
     var precedingDiv = parentDiv.querySelector(`.note[data-id="${changes.precedingId}"]`);
     var nextDiv = parentDiv.querySelector('.note');
     if(precedingDiv) nextDiv = precedingDiv.nextSibling;
