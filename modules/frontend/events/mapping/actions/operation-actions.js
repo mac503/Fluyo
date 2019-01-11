@@ -29,7 +29,7 @@ new Action('INDENT', function(e){
 
 });
 
-new Action('OUTDENT', function(e){
+new Action('OUTDENT', function(e, model){
   e.preventDefault();
   var id = getId(e.target);
   var parent = model.names[model.names[id].parentId];
@@ -40,7 +40,7 @@ new Action('OUTDENT', function(e){
   e.target.focus();
 });
 
-new Action('REPOSITION_UP', function(e){
+new Action('REPOSITION_UP', function(e, model){
   e.preventDefault();
   var id = getId(e.target);
   var parentId = model.names[id].parentId;
@@ -52,7 +52,7 @@ new Action('REPOSITION_UP', function(e){
   e.target.focus();
 });
 
-new Action('REPOSITION_DOWN', function(e){
+new Action('REPOSITION_DOWN', function(e, model){
   e.preventDefault();
   var id = getId(e.target);
   var parentId = model.names[id].parentId;
@@ -114,7 +114,7 @@ function waitTillDivDrawn(obj, selector, callback){
 }
 
 
-new Action('TOGGLE_COMPLETE', function(e){
+new Action('TOGGLE_COMPLETE', function(e, model){
   e.preventDefault();
   var id = getId(e.target);
   var newValue = true;
@@ -141,7 +141,7 @@ new Action('BACKSPACE_DELETE_NOTE', function(e){
   }
 });
 
-new Action('TOGGLE_CHILDREN', function(e){
+new Action('TOGGLE_CHILDREN', function(e, model){
   e.preventDefault();
   var id = getId(e.target);
   var newValue = true;
@@ -181,7 +181,7 @@ new Action('CLEAR_DATE', function(e){
   undoRedo.new([{id:id, operation:'setProp', data:{prop:'dueDate', value:null}}]);
 });
 
-new Action('PICK_DATE', function(e){
+new Action('PICK_DATE', function(e, model){
   var id = getId(e.target);
   dateBox.drawBox(new Date(model.names[id].effectiveDueDate), e.target, new Date(model.names[id].effectiveDueDate));
 });
@@ -193,7 +193,7 @@ new Action('CHOOSE_DATE', function(e){
   thisBox.parentNode.removeChild(thisBox);
 });
 
-new Action('DATE_BOX_CHANGE_MONTH', function(e){
+new Action('DATE_BOX_CHANGE_MONTH', function(e, model){
   var thisBox = e.target.closest('.dateBox');
   var id = getId(e.target);
   dateBox.updateBox(new Date(1*e.target.dataset.date), thisBox, new Date(model.names[id].effectiveDueDate));

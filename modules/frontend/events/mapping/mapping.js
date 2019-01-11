@@ -24,9 +24,12 @@ require('./specifics/clear-priority');
 require('./specifics/clear-date');
 require('./specifics/date-indicator');
 require('./specifics/date-box');
+require('./specifics/bullet');
+require('./specifics/drag-drop-helpers');
 
 require('./actions/operation-actions');
 require('./actions/superficial-actions');
+require('./actions/drag-drop-actions');
 actions = require('./actions/actions');
 
 window.mapping = mapping;

@@ -13,7 +13,7 @@ require('./modules/frontend/model/model').initialise(function(model){
   //perhaps load any display settings saved in localstorage if necessary?
 });
 
-},{"./modules/frontend/dom/initial-draw":6,"./modules/frontend/events/listeners":11,"./modules/frontend/model/model":28,"./modules/frontend/operations-wrappers/change-history":29}],2:[function(require,module,exports){
+},{"./modules/frontend/dom/initial-draw":6,"./modules/frontend/events/listeners":11,"./modules/frontend/model/model":31,"./modules/frontend/operations-wrappers/change-history":32}],2:[function(require,module,exports){
 module.exports = {drawBox, updateBox, updateSelected, test};
 
 function drawBox(date, target, selected){
@@ -360,12 +360,12 @@ module.exports = function(id){
   div.classList.add('note');
   div.innerHTML = `
     <div class='topLine'>
-      <div class='dragDropHelperTop'></div>
-      <div class='dragDropHelperBottom'></div>
-      <div class='dragDropHelperFirstChild'></div>
+      <div class='dragDropHelperTop' data-events-handler-dragenter='drag-drop-helper'></div>
+      <div class='dragDropHelperBottom' data-events-handler-dragenter='drag-drop-helper'></div>
+      <div class='dragDropHelperFirstChild' data-events-handler-dragenter='drag-drop-helper'></div>
       <div class='left'>
         <div class='toggle' data-events-handler='toggle'></div>
-        <div class='bullet' draggable='true'></div>
+        <div class='bullet' draggable='true' data-events-handler='bullet'></div>
       </div>
       <div class='contentHolder'>
         <div class='content' contenteditable='true' data-events-handler='note-content'></div>
@@ -414,7 +414,7 @@ module.exports = function(id, changes){
   });
 }
 
-},{"../model/model":28,"./new-note-div":7,"./update-note-node":10}],10:[function(require,module,exports){
+},{"../model/model":31,"./new-note-div":7,"./update-note-node":10}],10:[function(require,module,exports){
 var domHelpers = require('./dom-helpers');
 var caret = require('../utils/caret');
 var isVisible = require('../utils/is-visible');
@@ -524,9 +524,9 @@ module.exports = function(div, changes, initialDraw=false){
   }
 }
 
-},{"../../shared/text-processing/properties/priority":46,"../utils/caret":36,"../utils/friendly-date":37,"../utils/is-visible":38,"../utils/proper-case":39,"./dom-helpers":3}],11:[function(require,module,exports){
+},{"../../shared/text-processing/properties/priority":49,"../utils/caret":39,"../utils/friendly-date":40,"../utils/is-visible":41,"../utils/proper-case":42,"./dom-helpers":3}],11:[function(require,module,exports){
 //listen for these events
-var events = ['click', 'input', 'focusin', 'focusout', 'beforeunload', 'keydown', 'hashchange', 'mousemove'];
+var events = ['click', 'input', 'focusin', 'focusout', 'beforeunload', 'keydown', 'hashchange', 'dragstart', 'dragenter', 'dragend'];
 
 var properCase = require('../utils/proper-case');
 var mapping = require('./mapping/mapping');
@@ -554,10 +554,33 @@ module.exports = function(model){
 
 }
 
-},{"../utils/proper-case":39,"./mapping/mapping":18}],12:[function(require,module,exports){
+},{"../utils/proper-case":42,"./mapping/mapping":19}],12:[function(require,module,exports){
 module.exports = {};
 
 },{}],13:[function(require,module,exports){
+var Action = require('./new-action');
+
+new Action('DRAGSTART', function(e){
+  document.body.classList.add('dragging');
+});
+
+new Action('DRAGEND', function(e){
+  document.body.classList.remove('dragging');
+  removeHovers();
+});
+
+new Action('DRAGENTER', function(e){
+  removeHovers();
+  e.target.classList.add('hover');
+});
+
+function removeHovers(){
+  [].forEach.call(document.querySelectorAll('.hover'), function(el){
+    el.classList.remove('hover');
+  });
+}
+
+},{"./new-action":15}],14:[function(require,module,exports){
 module.exports = function(element){
   var note = element.closest('.note');
   if(note != null){
@@ -566,14 +589,14 @@ module.exports = function(element){
   else return null;
 }
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 var actions = require('./actions');
 
 module.exports = function(name, func){
   actions[name] = func;
 }
 
-},{"./actions":12}],15:[function(require,module,exports){
+},{"./actions":12}],16:[function(require,module,exports){
 var Action = require('./new-action');
 var undoRedo = require('../../../operations-wrappers/undo-redo');
 var caret = require('../../../utils/caret');
@@ -605,7 +628,7 @@ new Action('INDENT', function(e){
 
 });
 
-new Action('OUTDENT', function(e){
+new Action('OUTDENT', function(e, model){
   e.preventDefault();
   var id = getId(e.target);
   var parent = model.names[model.names[id].parentId];
@@ -616,7 +639,7 @@ new Action('OUTDENT', function(e){
   e.target.focus();
 });
 
-new Action('REPOSITION_UP', function(e){
+new Action('REPOSITION_UP', function(e, model){
   e.preventDefault();
   var id = getId(e.target);
   var parentId = model.names[id].parentId;
@@ -628,7 +651,7 @@ new Action('REPOSITION_UP', function(e){
   e.target.focus();
 });
 
-new Action('REPOSITION_DOWN', function(e){
+new Action('REPOSITION_DOWN', function(e, model){
   e.preventDefault();
   var id = getId(e.target);
   var parentId = model.names[id].parentId;
@@ -690,7 +713,7 @@ function waitTillDivDrawn(obj, selector, callback){
 }
 
 
-new Action('TOGGLE_COMPLETE', function(e){
+new Action('TOGGLE_COMPLETE', function(e, model){
   e.preventDefault();
   var id = getId(e.target);
   var newValue = true;
@@ -717,7 +740,7 @@ new Action('BACKSPACE_DELETE_NOTE', function(e){
   }
 });
 
-new Action('TOGGLE_CHILDREN', function(e){
+new Action('TOGGLE_CHILDREN', function(e, model){
   e.preventDefault();
   var id = getId(e.target);
   var newValue = true;
@@ -757,7 +780,7 @@ new Action('CLEAR_DATE', function(e){
   undoRedo.new([{id:id, operation:'setProp', data:{prop:'dueDate', value:null}}]);
 });
 
-new Action('PICK_DATE', function(e){
+new Action('PICK_DATE', function(e, model){
   var id = getId(e.target);
   dateBox.drawBox(new Date(model.names[id].effectiveDueDate), e.target, new Date(model.names[id].effectiveDueDate));
 });
@@ -769,7 +792,7 @@ new Action('CHOOSE_DATE', function(e){
   thisBox.parentNode.removeChild(thisBox);
 });
 
-new Action('DATE_BOX_CHANGE_MONTH', function(e){
+new Action('DATE_BOX_CHANGE_MONTH', function(e, model){
   var thisBox = e.target.closest('.dateBox');
   var id = getId(e.target);
   dateBox.updateBox(new Date(1*e.target.dataset.date), thisBox, new Date(model.names[id].effectiveDueDate));
@@ -781,7 +804,7 @@ new Action('HIDE_DATE_BOX', function(e){
   thisBox.parentNode.removeChild(thisBox);
 });
 
-},{"../../../../shared/operations/generate-id":42,"../../../../shared/text-processing/snap":47,"../../../dom/date-box":2,"../../../dom/dom-helpers":3,"../../../operations-wrappers/undo-redo":33,"../../../utils/caret":36,"./get-id-from-dom-element":13,"./new-action":14,"./throttle":17}],16:[function(require,module,exports){
+},{"../../../../shared/operations/generate-id":45,"../../../../shared/text-processing/snap":50,"../../../dom/date-box":2,"../../../dom/dom-helpers":3,"../../../operations-wrappers/undo-redo":36,"../../../utils/caret":39,"./get-id-from-dom-element":14,"./new-action":15,"./throttle":18}],17:[function(require,module,exports){
 var sync = require('../../../operations-wrappers/sync-stack');
 var domHelpers = require('../../../dom/dom-helpers');
 var caret = require('../../../utils/caret');
@@ -840,7 +863,7 @@ new Action('BEFORE_UNLOAD', function(e){
   return sync.isClear();
 });
 
-},{"../../../dom/dom-helpers":3,"../../../operations-wrappers/sync-stack":32,"../../../utils/caret":36,"./new-action":14}],17:[function(require,module,exports){
+},{"../../../dom/dom-helpers":3,"../../../operations-wrappers/sync-stack":35,"../../../utils/caret":39,"./new-action":15}],18:[function(require,module,exports){
 var undoRedo = require('../../../operations-wrappers/undo-redo');
 
 var timeoutSeconds = 1;
@@ -873,7 +896,7 @@ Throttle.prototype.clear = function(){
 
 module.exports = new Throttle(timeoutSeconds);
 
-},{"../../../operations-wrappers/undo-redo":33}],18:[function(require,module,exports){
+},{"../../../operations-wrappers/undo-redo":36}],19:[function(require,module,exports){
 module.exports = mapping = [];
 
 Mapping = function(name, eventsToActions){
@@ -900,14 +923,17 @@ require('./specifics/clear-priority');
 require('./specifics/clear-date');
 require('./specifics/date-indicator');
 require('./specifics/date-box');
+require('./specifics/bullet');
+require('./specifics/drag-drop-helpers');
 
 require('./actions/operation-actions');
 require('./actions/superficial-actions');
+require('./actions/drag-drop-actions');
 actions = require('./actions/actions');
 
 window.mapping = mapping;
 
-},{"./actions/actions":12,"./actions/operation-actions":15,"./actions/superficial-actions":16,"./specifics/body":19,"./specifics/clear-date":20,"./specifics/clear-priority":21,"./specifics/date-box":22,"./specifics/date-indicator":23,"./specifics/note-content":24,"./specifics/panel":25,"./specifics/toggle":26,"./specifics/window":27}],19:[function(require,module,exports){
+},{"./actions/actions":12,"./actions/drag-drop-actions":13,"./actions/operation-actions":16,"./actions/superficial-actions":17,"./specifics/body":20,"./specifics/bullet":21,"./specifics/clear-date":22,"./specifics/clear-priority":23,"./specifics/date-box":24,"./specifics/date-indicator":25,"./specifics/drag-drop-helpers":26,"./specifics/note-content":27,"./specifics/panel":28,"./specifics/toggle":29,"./specifics/window":30}],20:[function(require,module,exports){
 new Mapping('body', {
   'keydown': function(e){
     switch(e.keyCode){
@@ -935,17 +961,23 @@ new Mapping('body', {
   }
 });
 
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
+new Mapping('bullet', {
+  'dragstart': 'DRAGSTART',
+  'dragend': 'DRAGEND'
+});
+
+},{}],22:[function(require,module,exports){
 new Mapping('clear-date', {
   'click': 'CLEAR_DATE'
 });
 
-},{}],21:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 new Mapping('clear-priority', {
   'click': 'CLEAR_PRIORITY'
 });
 
-},{}],22:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 new Mapping('date-box-date', {
   'click': 'CHOOSE_DATE'
 });
@@ -958,12 +990,17 @@ new Mapping('date-box-click-cover', {
   'click': 'HIDE_DATE_BOX'
 });
 
-},{}],23:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 new Mapping('date-indicator', {
   'click': 'PICK_DATE'
 });
 
-},{}],24:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
+new Mapping('drag-drop-helper', {
+  'dragenter': 'DRAGENTER'
+});
+
+},{}],27:[function(require,module,exports){
 var caret = require('../../../utils/caret');
 
 new Mapping('note-content', {
@@ -1020,17 +1057,17 @@ new Mapping('note-content', {
   'focusout': 'FORCE_THROTTLE'
 });
 
-},{"../../../utils/caret":36}],25:[function(require,module,exports){
+},{"../../../utils/caret":39}],28:[function(require,module,exports){
 new Mapping('panel', {
   'click': 'PANEL_SLIDE'
 });
 
-},{}],26:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 new Mapping('toggle', {
   'click': 'TOGGLE_CHILDREN'
 });
 
-},{}],27:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 var domHelpers = require('../../../dom/dom-helpers');
 
 new Mapping('window', {
@@ -1056,7 +1093,7 @@ new Mapping('window', {
   }
 });
 
-},{"../../../dom/dom-helpers":3}],28:[function(require,module,exports){
+},{"../../../dom/dom-helpers":3}],31:[function(require,module,exports){
 var ajax = require('../utils/ajax');
 
 module.exports = model = {};
@@ -1084,7 +1121,7 @@ model.update = function(newModel){
   });
 }
 
-},{"../utils/ajax":35}],29:[function(require,module,exports){
+},{"../utils/ajax":38}],32:[function(require,module,exports){
 var Tree = require('../../shared/operations/Tree');
 
 module.exports = changeHistory = {};
@@ -1123,7 +1160,7 @@ changeHistory.rollback = function(index){
   model.names = tree.model.names;
 }
 
-},{"../../shared/operations/Tree":40}],30:[function(require,module,exports){
+},{"../../shared/operations/Tree":43}],33:[function(require,module,exports){
 var model = require('../model/model');
 
 module.exports = function(actions){
@@ -1154,7 +1191,7 @@ function getInverse(action){
   }
 }
 
-},{"../model/model":28}],31:[function(require,module,exports){
+},{"../model/model":31}],34:[function(require,module,exports){
 //carry out the operation on the current model, update the results, and draw the results
 var model = require('../model/model');
 var Tree = require('../../shared/operations/Tree');
@@ -1184,7 +1221,7 @@ module.exports = function(operations){
   return deepInverse;
 }
 
-},{"../../shared/operations/Tree":40,"../../shared/operations/get-deep-inverse":43,"../dom/draw-changes":4,"../model/model":28,"../temp-order-notes":34}],32:[function(require,module,exports){
+},{"../../shared/operations/Tree":43,"../../shared/operations/get-deep-inverse":46,"../dom/draw-changes":4,"../model/model":31,"../temp-order-notes":37}],35:[function(require,module,exports){
 var pollSeconds = 5;
 
 var operate = require('./operate');
@@ -1261,7 +1298,7 @@ window.setInterval(sync.sync, pollSeconds * 1000);
 
 window.sync = sync;
 
-},{"../utils/ajax":35,"./change-history":29,"./operate":31}],33:[function(require,module,exports){
+},{"../utils/ajax":38,"./change-history":32,"./operate":34}],36:[function(require,module,exports){
 var syncStack = require('./sync-stack');
 var getInverse = require('./get-inverse');
 
@@ -1299,7 +1336,7 @@ undoRedo.undo = function(){
 
 window.undoRedo = undoRedo;
 
-},{"./get-inverse":30,"./sync-stack":32}],34:[function(require,module,exports){
+},{"./get-inverse":33,"./sync-stack":35}],37:[function(require,module,exports){
 module.exports = function(childrenRaw){
   var children = [];
   var precedingId = null;
@@ -1311,7 +1348,7 @@ module.exports = function(childrenRaw){
   return children;
 }
 
-},{}],35:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 function ajax(method, callback, data){
 
   if(data == null) data = {};
@@ -1349,7 +1386,7 @@ module.exports = {
   put
 }
 
-},{}],36:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 module.exports = {
   get,
   set,
@@ -1417,7 +1454,7 @@ function caretAtEnd(div){
   else return false;
 }
 
-},{}],37:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 module.exports = function(date){
   date = new Date(date);
   if(date == 'Invalid Date') return '';
@@ -1453,7 +1490,7 @@ function day(date, mod){
   return day;
 }
 
-},{}],38:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 module.exports = function(el){
   if(el.closest('.holdingPen') == null){
     //make sure it's not a hidden child of a collapsed element
@@ -1466,12 +1503,12 @@ module.exports = function(el){
   else return false;
 }
 
-},{}],39:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 module.exports = function(string){
   return string[0].toUpperCase()+string.substr(1).toLowerCase();
 }
 
-},{}],40:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 const defaultNoteObject = require('./default-note-object');
 const waterfalls = require('./waterfalls');
 
@@ -1632,7 +1669,7 @@ Tree.prototype.apply = function(changes){
 
 module.exports = Tree;
 
-},{"./default-note-object":41,"./waterfalls":44}],41:[function(require,module,exports){
+},{"./default-note-object":44,"./waterfalls":47}],44:[function(require,module,exports){
 module.exports = function(id){
   return {
     id: id,
@@ -1640,12 +1677,12 @@ module.exports = function(id){
   };
 }
 
-},{}],42:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 module.exports = function(){
   return btoa(Date.now().toString()+Math.round(Math.random()*100000).toString());
 }
 
-},{}],43:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 module.exports = function(changes, model){
   var inverseChanges = {};
   Object.getOwnPropertyNames(changes).forEach(function(id){
@@ -1658,7 +1695,7 @@ module.exports = function(changes, model){
   return inverseChanges;
 }
 
-},{}],44:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 module.exports = {
   //triggerProp: waterfallProp,
   "isComplete": "isDescendantOfComplete",
@@ -1666,7 +1703,7 @@ module.exports = {
   "dueDate": "effectiveDueDate"
 };
 
-},{}],45:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 var undoRedo = require('../../frontend/operations-wrappers/undo-redo');
 
 module.exports = function(id, text, cases){
@@ -1727,14 +1764,14 @@ module.exports = function(id, text, cases){
   if(operations.length > 0) undoRedo.new(operations);
 }
 
-},{"../../frontend/operations-wrappers/undo-redo":33}],46:[function(require,module,exports){
+},{"../../frontend/operations-wrappers/undo-redo":36}],49:[function(require,module,exports){
 module.exports = [
   'normal',
   'important',
   'critical'
 ];
 
-},{}],47:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 const process = require('./generic-process-text');
 const priority = require('./properties/priority');
 
@@ -1858,4 +1895,4 @@ function getNextXDay(date, day, explicitNext){ //0 = monday
   return tempDate;
 }
 
-},{"./generic-process-text":45,"./properties/priority":46}]},{},[1]);
+},{"./generic-process-text":48,"./properties/priority":49}]},{},[1]);

@@ -1,8 +1,5 @@
-.dragDropHelperTop, .dragDropHelperBottom, .dragDropHelperFirstChild{
-  display: none;
-}
-
 .dragDropHelperTop{
+  display: block;
   background-color: rgba(0,0,0,0);
   float: left;
   position: absolute;
@@ -13,11 +10,12 @@
   border-top: 3px solid transparent;
   z-index: 101;
 }
-.dragDropHelperTop:hover{
+.dragDropHelperTop.hover{
   border-top-color: lightblue;
 }
 
 .dragDropHelperBottom{
+  display: block;
   background-color: rgba(0,0,0,0);
   float: left;
   position: absolute;
@@ -27,11 +25,12 @@
   border-bottom: 3px solid transparent;
   z-index: 102;
 }
-.dragDropHelperBottom:hover{
+.dragDropHelperBottom.hover{
   border-bottom-color: lightblue;
 }
 
 .dragDropHelperFirstChild{
+  display: block;
   background-color: rgba(0,0,0,0);
   float: left;
   position: absolute;
@@ -41,6 +40,10 @@
   border-bottom: 3px solid transparent;
   z-index: 103;
 }
-.dragDropHelperFirstChild:hover{
+.dragDropHelperFirstChild.hover{
   border-bottom-color: lightblue;
+}
+
+body:not(.dragging) .dragDropHelperTop, body:not(.dragging) .dragDropHelperBottom, body:not(.dragging) .dragDropHelperFirstChild{
+  display: none;
 }
