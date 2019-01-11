@@ -136,6 +136,17 @@ div, input{
 .flashHighlight {
   animation: highlight 1s;
 }
+.isComplete>.topLine>.contentHolder>.content{
+  text-decoration: line-through;
+}
+.isComplete{
+  color: lightgray;
+  //display: none;
+}
+
+.showCompleted .isComplete{
+  display: initial;
+}
 .isParent.isCollapsed>.topLine .bullet::before{
   visibility: visible;
 }
@@ -146,76 +157,6 @@ div, input{
 
 .isCollapsed>.children{
   display: none;
-}
-.isComplete>.topLine>.contentHolder>.content{
-  text-decoration: line-through;
-}
-.isComplete{
-  color: lightgray;
-//  display: none;
-}
-
-.showCompleted .isComplete{
-  display: initial;
-}
-.filterComponent{
-  min-height: 1em;
-}
-.priority{
-  font-size: .8em;
-  display: inline-block;
-}
-
-.priority[data-prop-effective-priority]::before{
-  content: "\00A0";
-  display: inline-block;
-  border-left: 3px solid;
-}
-.priority:not([data-prop-priority])[data-prop-effective-priority="normal"]::before{
-  display: none;
-}
-.priority[data-prop-effective-priority="normal"]::before{
-  border-left-color: lightgreen;
-}
-.priority[data-prop-effective-priority="important"]::before{
-  border-left-color: #ffbf00;
-}
-.priority[data-prop-effective-priority="critical"]::before{
-  border-left-color: pink;
-}
-
-.priority[data-prop-priority]::before{
-  content: attr(data-prop-effective-priority);
-  border-bottom: 1px solid black;
-  border-bottom-style: dotted;
-  padding-left: .2em;
-}
-
-.priority[data-prop-priority] .clearPriority::after{
-  content: "\2716";
-  color: lightgray;
-  cursor: pointer;
-  padding-left: .2em;
-}
-.toggle{
-  background-color: white;
-  position: relative;
-  width: 1em;
-  height: 1em;
-  margin-right: .4em;
-  margin-left: .1em;
-  cursor: pointer;
-  visibility: hidden;
-}
-.isParent:not(.isCollapsed)>.topLine:hover .toggle::before{
-  content: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M 20 50 H 80" fill="transparent" stroke="darkgray" stroke-width="12" stroke-linecap="round"/></svg>');
-  visibility: visible;
-}
-.toggle::before{
-  display: block;
-  position: absolute;
-  height: 100%;
-  width: 100%;
 }
 .dateBox{
   cursor: default;
@@ -297,22 +238,82 @@ div, input{
   z-index: 1000;
   opacity: 0;
 }
+.toggle{
+  background-color: white;
+  position: relative;
+  width: 1em;
+  height: 1em;
+  margin-right: .4em;
+  margin-left: .1em;
+  cursor: pointer;
+  visibility: hidden;
+}
+.isParent:not(.isCollapsed)>.topLine:hover .toggle::before{
+  content: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M 20 50 H 80" fill="transparent" stroke="darkgray" stroke-width="12" stroke-linecap="round"/></svg>');
+  visibility: visible;
+}
+.toggle::before{
+  display: block;
+  position: absolute;
+  height: 100%;
+  width: 100%;
+}
+.filterComponent{
+  min-height: 1em;
+}
+.priority{
+  font-size: .8em;
+  display: inline-block;
+}
+
+.priority[data-prop-effective-priority]::before{
+  content: "\00A0";
+  display: inline-block;
+  border-left: 3px solid;
+}
+.priority:not([data-prop-priority])[data-prop-effective-priority="normal"]::before{
+  display: none;
+}
+.priority[data-prop-effective-priority="normal"]::before{
+  border-left-color: lightgreen;
+}
+.priority[data-prop-effective-priority="important"]::before{
+  border-left-color: #ffbf00;
+}
+.priority[data-prop-effective-priority="critical"]::before{
+  border-left-color: pink;
+}
+
+.priority[data-prop-priority]::before{
+  content: attr(data-prop-effective-priority);
+  border-bottom: 1px solid black;
+  border-bottom-style: dotted;
+  padding-left: .2em;
+}
+
+.priority[data-prop-priority] .clearPriority::after{
+  content: "\2716";
+  color: lightgray;
+  cursor: pointer;
+  padding-left: .2em;
+}
 .dueDate:not([data-prop-effective-due-date]){
+  display: none;
+}
+.dueDate[data-prop-effective-due-date=""]{
   display: none;
 }
 
 .dueDate{
   position: relative;
   display: inline-block;
-  border-left: 3px solid yellow;
   user-select: none;
   cursor: pointer;
   font-size: .8em;
 }
 .dueDate::before{
   display: inline-block;
-  content: attr(data-prop-effective-due-date);
-  padding-left: .4em;
+  content: '\231A\00A0' attr(data-prop-effective-due-date);
 }
 .dueDate[data-prop-due-date]::before{
   border-bottom: 1px solid black;
@@ -323,6 +324,52 @@ div, input{
   color: gray;
   color: lightgray;
   padding-left: .2em;
+}
+.dragDropHelperTop, .dragDropHelperBottom, .dragDropHelperFirstChild{
+  display: none;
+}
+
+.dragDropHelperTop{
+  background-color: rgba(0,0,0,0);
+  float: left;
+  position: absolute;
+  width: calc(100% - 1.7em);
+  margin-left: 1.7em;
+  top: -.1em;
+  height: 1em;
+  border-top: 3px solid transparent;
+  z-index: 101;
+}
+.dragDropHelperTop:hover{
+  border-top-color: lightblue;
+}
+
+.dragDropHelperBottom{
+  background-color: rgba(0,0,0,0);
+  float: left;
+  position: absolute;
+  width: calc(100% - 1.7em);
+  margin-left: 1.7em;
+  height: 1.7em;
+  border-bottom: 3px solid transparent;
+  z-index: 102;
+}
+.dragDropHelperBottom:hover{
+  border-bottom-color: lightblue;
+}
+
+.dragDropHelperFirstChild{
+  background-color: rgba(0,0,0,0);
+  float: left;
+  position: absolute;
+  width: calc(100% - 3.7em);
+  margin-left: 3.7em;
+  height: 1.7em;
+  border-bottom: 3px solid transparent;
+  z-index: 103;
+}
+.dragDropHelperFirstChild:hover{
+  border-bottom-color: lightblue;
 }
 .note{
   display: block;
@@ -400,13 +447,13 @@ div, input{
 
 .contentHolder{
   margin-left: .4em;
-  width: 100%;
+  max-width: 95%;
 }
-
 
 .content{
   outline: 0px solid transparent;
-  display: inline-block;
+  display: inline;
+  overflow-wrap: break-word;
   padding-left: 1px;
 }
 

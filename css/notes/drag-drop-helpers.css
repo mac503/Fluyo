@@ -1,0 +1,46 @@
+.dragDropHelperTop, .dragDropHelperBottom, .dragDropHelperFirstChild{
+  display: none;
+}
+
+.dragDropHelperTop{
+  background-color: rgba(0,0,0,0);
+  float: left;
+  position: absolute;
+  width: calc(100% - 1.7em);
+  margin-left: 1.7em;
+  top: -.1em;
+  height: 1em;
+  border-top: 3px solid transparent;
+  z-index: 101;
+}
+.dragDropHelperTop:hover{
+  border-top-color: lightblue;
+}
+
+.dragDropHelperBottom{
+  background-color: rgba(0,0,0,0);
+  float: left;
+  position: absolute;
+  width: calc(100% - 1.7em);
+  margin-left: 1.7em;
+  height: 1.7em;
+  border-bottom: 3px solid transparent;
+  z-index: 102;
+}
+.dragDropHelperBottom:hover{
+  border-bottom-color: lightblue;
+}
+
+.dragDropHelperFirstChild{
+  background-color: rgba(0,0,0,0);
+  float: left;
+  position: absolute;
+  width: calc(100% - 3.7em);
+  margin-left: 3.7em;
+  height: 1.7em;
+  border-bottom: 3px solid transparent;
+  z-index: 103;
+}
+.dragDropHelperFirstChild:hover{
+  border-bottom-color: lightblue;
+}

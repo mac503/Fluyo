@@ -3,7 +3,7 @@
 }
 .isComplete{
   color: lightgray;
-//  display: none;
+  //display: none;
 }
 
 .showCompleted .isComplete{

@@ -1,5 +1,5 @@
 //listen for these events
-var events = ['click', 'input', 'focusin', 'focusout', 'beforeunload', 'keydown', 'hashchange'];
+var events = ['click', 'input', 'focusin', 'focusout', 'beforeunload', 'keydown', 'hashchange', 'mousemove'];
 
 var properCase = require('../utils/proper-case');
 var mapping = require('./mapping/mapping');

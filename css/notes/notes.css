@@ -74,13 +74,13 @@
 
 .contentHolder{
   margin-left: .4em;
-  width: 100%;
+  max-width: 95%;
 }
-
 
 .content{
   outline: 0px solid transparent;
-  display: inline-block;
+  display: inline;
+  overflow-wrap: break-word;
   padding-left: 1px;
 }
 

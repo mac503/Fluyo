@@ -4,11 +4,14 @@ module.exports = function(id){
   div.classList.add('note');
   div.innerHTML = `
     <div class='topLine'>
+      <div class='dragDropHelperTop'></div>
+      <div class='dragDropHelperBottom'></div>
+      <div class='dragDropHelperFirstChild'></div>
       <div class='left'>
         <div class='toggle' data-events-handler='toggle'></div>
         <div class='bullet' draggable='true'></div>
       </div>
-      <div class='contentHolder'><div class='dragDropTop'></div><div class='dragDropBottom'></div>
+      <div class='contentHolder'>
         <div class='content' contenteditable='true' data-events-handler='note-content'></div>
         <div class='priority'><span class='clearPriority' data-events-handler='clear-priority'></span></div>
         <div class='dueDate' data-events-handler='date-indicator'><span class='clearDate' data-events-handler='clear-date'></span></div>
