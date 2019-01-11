@@ -766,19 +766,24 @@ new Action('TOGGLE_COMPLETE', function(e, model){
 new Action('BACKSPACE_DELETE_NOTE', function(e, model){
   e.preventDefault();
   var id = getId(e.target);
-  var prev = domHelpers.prevSibling(e.target);
-  var prevCousin = domHelpers.prevInView(e.target);
+  var prev = domHelpers.prevSibling(e.target, 'visible');
   if(prev && prev.querySelector('.content').innerText == ''){
     undoRedo.new([{id:prev.dataset.id, operation:'move', data:{parentId:'DELETED', precedingId:null}}]);
-    //NOW UNNECESSARY TODO REMOVE e.target.focus();
   }
-  else if(e.target.innerText == '' && model.names[id].isParent == false){
+  //if not a parent
+  else if(model.names[id].isParent == false){
+    //no text, delete it
+    if(e.target.innerText == ''){
     undoRedo.new([{id:id, operation:'move', data:{parentId:'DELETED', precedingId:null}}]);
-    /*NOW UNNECESSARY TODO REMOVE
-    if(prev) prev.querySelector('.content').focus();
-    else if(prevCousin) prevCousin.querySelector('.content').focus();
-    else actions['NAV_FIRST_NOTE'](e);
-    */
+    }
+    //if DOES have text content, and previous note also has text content, then delete note and combine texts
+    else if(prev){
+      var content = prev.innerText.trim() + e.target.innerText;
+      undoRedo.new([
+        {id:id, operation:'move', data:{parentId:'DELETED', precedingId:null}},
+        {id:prev.dataset.id, operation:'setProp', data:{prop:'content', value:content}}
+      ]);
+    }
   }
 });
 
