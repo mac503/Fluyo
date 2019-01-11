@@ -55,3 +55,7 @@ new Action('ALERT', function(e){
 new Action('BEFORE_UNLOAD', function(e){
   return sync.isClear();
 });
+
+new Action('PANEL_FLIP', function(e){
+  e.target.closest('.panel').classList.toggle('flipped');
+});

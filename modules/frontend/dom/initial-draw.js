@@ -6,6 +6,7 @@ var updateNoteNode = require('./update-note-node');
 module.exports = function(model){
 
   document.querySelector('#panel1').appendChild(outlineComponent('OUTLINE'));
+  document.querySelector('#panel1').appendChild(outlineComponent('INBOX'));
   document.querySelector('#panel2').appendChild(outlineComponent('OUTLINE'));
 
   //for each outline component, populate the notes which should be there

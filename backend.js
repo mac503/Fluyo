@@ -45,7 +45,8 @@ app.get('/reset', function(req, res){
     {id:'NEW', content:'', parentId:null},
     {id:'1', content:'One', parentId:'OUTLINE'},
     {id:'2', content:'Two', parentId:'OUTLINE', precedingId:'1'},
-    {id:'3', content:'Three', parentId:'OUTLINE', precedingId:'2'}
+    {id:'3', content:'Three', parentId:'OUTLINE', precedingId:'2'},
+    {id:'inbox1', content:'I am in the inbox', parentId:'INBOX', precedingId:null}
   ];
   knex('notes').del()
   .then(() => knex('changes').del())

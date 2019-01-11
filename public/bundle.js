@@ -316,6 +316,7 @@ var updateNoteNode = require('./update-note-node');
 module.exports = function(model){
 
   document.querySelector('#panel1').appendChild(outlineComponent('OUTLINE'));
+  document.querySelector('#panel1').appendChild(outlineComponent('INBOX'));
   document.querySelector('#panel2').appendChild(outlineComponent('OUTLINE'));
 
   //for each outline component, populate the notes which should be there
@@ -570,6 +571,8 @@ new Action('DRAGEND', function(e){
 });
 
 new Action('DRAGENTER', function(e){
+  //first check if target is allowed
+  
   removeHovers();
   e.target.classList.add('hover');
 });
@@ -863,6 +866,10 @@ new Action('BEFORE_UNLOAD', function(e){
   return sync.isClear();
 });
 
+new Action('PANEL_FLIP', function(e){
+  e.target.closest('.panel').classList.toggle('flipped');
+});
+
 },{"../../../dom/dom-helpers":3,"../../../operations-wrappers/sync-stack":35,"../../../utils/caret":39,"./new-action":15}],18:[function(require,module,exports){
 var undoRedo = require('../../../operations-wrappers/undo-redo');
 
@@ -1060,6 +1067,10 @@ new Mapping('note-content', {
 },{"../../../utils/caret":39}],28:[function(require,module,exports){
 new Mapping('panel', {
   'click': 'PANEL_SLIDE'
+});
+
+new Mapping('panel-corner', {
+  'click': 'PANEL_FLIP'
 });
 
 },{}],29:[function(require,module,exports){

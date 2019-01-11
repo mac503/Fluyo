@@ -38,6 +38,7 @@ body{
   border: 1px solid lightgray;
   margin: 20px;
   padding: 10px;
+  position: relative;
 }
 
 
@@ -123,6 +124,36 @@ input{
 
 div, input{
   outline: none;
+}
+.panel .corner{
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1em;
+  height: 1em;
+  background: linear-gradient(to bottom right, #f8f8f8, #f8f8f8 35%, rgba(0,0,0,0.05), white 50%, #f0f0f0);
+  -webkit-box-shadow:0 1px 4px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 0, 0, 0.1);
+     -moz-box-shadow:0 1px 4px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 0, 0, 0.1);
+          box-shadow:0 1px 4px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}
+
+.panel .corner:hover{
+  transition: all .2s;
+  width: 1.5em;
+  height: 1.5em;
+}
+
+.panel>:nth-child(3){
+  display: none;
+}
+
+.panel.flipped>:nth-child(2){
+  display: none;
+}
+.panel.flipped>:nth-child(3){
+  display: initial;
 }
 @keyframes highlight {
   0% {

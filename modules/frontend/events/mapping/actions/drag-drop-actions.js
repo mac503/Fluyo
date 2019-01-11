@@ -10,6 +10,8 @@ new Action('DRAGEND', function(e){
 });
 
 new Action('DRAGENTER', function(e){
+  //first check if target is allowed
+  
   removeHovers();
   e.target.classList.add('hover');
 });
