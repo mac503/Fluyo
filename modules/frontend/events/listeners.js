@@ -9,7 +9,7 @@ module.exports = function(model){
   //pass to relevant handlers
   events.forEach(function(event){
     window.addEventListener(event, function(e){
-      console.log(e);
+      //console.log(e);
       var t = e.target;
 
       //catch unloading

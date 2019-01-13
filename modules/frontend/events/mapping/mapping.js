@@ -28,6 +28,7 @@ require('./specifics/bullet');
 require('./specifics/drag-drop-helpers');
 require('./specifics/crumb');
 require('./specifics/outline-add');
+require('./specifics/display-checkbox');
 
 require('./actions/operation-actions');
 require('./actions/superficial-actions');

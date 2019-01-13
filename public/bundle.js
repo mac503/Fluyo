@@ -13,7 +13,7 @@ require('./modules/frontend/model/model').initialise(function(model){
   //perhaps load any display settings saved in localstorage if necessary?
 });
 
-},{"./modules/frontend/dom/initial-draw":6,"./modules/frontend/events/listeners":11,"./modules/frontend/model/model":33,"./modules/frontend/operations-wrappers/change-history":34}],2:[function(require,module,exports){
+},{"./modules/frontend/dom/initial-draw":6,"./modules/frontend/events/listeners":11,"./modules/frontend/model/model":34,"./modules/frontend/operations-wrappers/change-history":35}],2:[function(require,module,exports){
 module.exports = {drawBox, updateBox, updateSelected, test};
 
 function drawBox(date, target, selected){
@@ -288,7 +288,16 @@ module.exports = function(changes){
 
 },{"./update-note-instances":9}],5:[function(require,module,exports){
 module.exports = `
-<div class='filterComponent'></div>
+<div class='filterComponent'>
+  <div>
+    Due Date<br>
+    <input type='checkbox' data-events-handler='display-checkbox' data-display-class='displayDueDates'> <input type='checkbox' data-events-handler='display-checkbox' data-display-class='displayEffectiveDueDates'>
+  </div>
+  <div>
+    Priority<br>
+    <input type='checkbox' data-events-handler='display-checkbox' data-display-class='displayPriority'> <input type='checkbox' data-events-handler='display-checkbox' data-display-class='displayEffectivePriority'>
+  </div>
+</div>
 `;
 
 /*
@@ -416,14 +425,11 @@ module.exports = function(id, changes){
   //in case we're moving from inbox to main outline, or vice versa, may need to create new divs if they don't exist yet in the other outline view
   else if(changes.hasOwnProperty('parentId')){
     //for each div of the new parent, if that view doesn't contain a note div for this id, create one
+    //need to recursively do this for children as well...
     [].forEach.call(document.querySelectorAll(`[data-id="${changes.parentId}"]`), function(parentDiv){
       var component = parentDiv.closest('[data-outline-component]');
       if(component.querySelector(`[data-id="${id}"]`) == null){
-        var div = newNoteDiv(id);
-        parentDiv.querySelector('.children').appendChild(div);
-        //need to apply everything from the model unfortunately
-        var currentState = JSON.parse(JSON.stringify(model.names[id]));
-        updateNoteNode(div, currentState);
+        recursiveCopyNotes(id, parentDiv);
       }
     });
   }
@@ -432,7 +438,32 @@ module.exports = function(id, changes){
   });
 }
 
-},{"../model/model":33,"./new-note-div":7,"./update-note-node":10}],10:[function(require,module,exports){
+function recursiveCopyNotes(id, newParent){
+  var div = newNoteDiv(id);
+  newParent.querySelector('.children').appendChild(div);
+  var currentState = JSON.parse(JSON.stringify(model.names[id]));
+  updateNoteNode(div, currentState);
+  //check for children and do the same
+  model.raw.filter(x=> x.parentId == id).forEach(function(child){
+    recursiveCopyNotes(child.id, div);
+  });
+}
+
+function addChildDivs(oldDiv, newDiv){
+  [].forEach.call(oldDiv.querySelectorAll('.note'), function(childNote){
+    var childId = childNote.dataset.id;
+    var newChildDiv = newNoteDiv(childId);
+    var currentState = JSON.parse(JSON.stringify(model.names[childId]));
+    updateNoteNode(newChildDiv, currentState);
+    var newParentDivOfChild;
+    var oldParentDivOfChild = childNote.parentNode.closest('.note');
+    if(oldParentDivOfChild == oldDiv) newParentDivOfChild = newDiv;
+    else newParentDivOfChild = newDiv.querySelector(`[data-id="${oldParentDivOfChild.dataset.id}"]`);
+    newParentDivOfChild.querySelector('.children').appendChild(newChildDiv);
+  });
+}
+
+},{"../model/model":34,"./new-note-div":7,"./update-note-node":10}],10:[function(require,module,exports){
 var domHelpers = require('./dom-helpers');
 var caret = require('../utils/caret');
 var isVisible = require('../utils/is-visible');
@@ -549,7 +580,7 @@ module.exports = function(div, changes, initialDraw=false){
   }
 }
 
-},{"../../shared/text-processing/properties/priority":51,"../utils/caret":41,"../utils/friendly-date":42,"../utils/is-visible":43,"../utils/proper-case":44,"./dom-helpers":3}],11:[function(require,module,exports){
+},{"../../shared/text-processing/properties/priority":52,"../utils/caret":42,"../utils/friendly-date":43,"../utils/is-visible":44,"../utils/proper-case":45,"./dom-helpers":3}],11:[function(require,module,exports){
 //listen for these events
 var events = ['click', 'input', 'focusin', 'focusout', 'beforeunload', 'keydown', 'hashchange', 'dragstart', 'dragenter', 'dragend'];
 
@@ -561,7 +592,7 @@ module.exports = function(model){
   //pass to relevant handlers
   events.forEach(function(event){
     window.addEventListener(event, function(e){
-      console.log(e);
+      //console.log(e);
       var t = e.target;
 
       //catch unloading
@@ -579,7 +610,7 @@ module.exports = function(model){
 
 }
 
-},{"../utils/proper-case":44,"./mapping/mapping":19}],12:[function(require,module,exports){
+},{"../utils/proper-case":45,"./mapping/mapping":19}],12:[function(require,module,exports){
 module.exports = {};
 
 },{}],13:[function(require,module,exports){
@@ -631,7 +662,7 @@ function removeHovers(){
   });
 }
 
-},{"../../../model/model":33,"./get-id-from-dom-element":14,"./new-action":15}],14:[function(require,module,exports){
+},{"../../../model/model":34,"./get-id-from-dom-element":14,"./new-action":15}],14:[function(require,module,exports){
 module.exports = function(element){
   var note = element.closest('.note');
   if(note != null){
@@ -868,7 +899,7 @@ new Action('HIDE_DATE_BOX', function(e){
   thisBox.parentNode.removeChild(thisBox);
 });
 
-},{"../../../../shared/operations/generate-id":47,"../../../../shared/text-processing/snap":52,"../../../dom/date-box":2,"../../../dom/dom-helpers":3,"../../../operations-wrappers/undo-redo":38,"../../../utils/caret":41,"./get-id-from-dom-element":14,"./new-action":15,"./throttle":18}],17:[function(require,module,exports){
+},{"../../../../shared/operations/generate-id":48,"../../../../shared/text-processing/snap":53,"../../../dom/date-box":2,"../../../dom/dom-helpers":3,"../../../operations-wrappers/undo-redo":39,"../../../utils/caret":42,"./get-id-from-dom-element":14,"./new-action":15,"./throttle":18}],17:[function(require,module,exports){
 var sync = require('../../../operations-wrappers/sync-stack');
 var domHelpers = require('../../../dom/dom-helpers');
 var caret = require('../../../utils/caret');
@@ -962,7 +993,13 @@ function drawBreadcrumbs(bullet, container){
   bullet.closest('[data-outline-component]').querySelector('.breadcrumbs').innerHTML = output;
 }
 
-},{"../../../dom/dom-helpers":3,"../../../operations-wrappers/sync-stack":37,"../../../utils/caret":41,"./new-action":15}],18:[function(require,module,exports){
+new Action('FILTER_DISPLAY', function(e){
+  var component = e.target.closest('[data-outline-component]');
+  if(e.target.checked) component.classList.add(e.target.dataset.displayClass);
+  else component.classList.remove(e.target.dataset.displayClass);
+});
+
+},{"../../../dom/dom-helpers":3,"../../../operations-wrappers/sync-stack":38,"../../../utils/caret":42,"./new-action":15}],18:[function(require,module,exports){
 var undoRedo = require('../../../operations-wrappers/undo-redo');
 
 var timeoutSeconds = 1;
@@ -995,7 +1032,7 @@ Throttle.prototype.clear = function(){
 
 module.exports = new Throttle(timeoutSeconds);
 
-},{"../../../operations-wrappers/undo-redo":38}],19:[function(require,module,exports){
+},{"../../../operations-wrappers/undo-redo":39}],19:[function(require,module,exports){
 module.exports = mapping = [];
 
 Mapping = function(name, eventsToActions){
@@ -1026,6 +1063,7 @@ require('./specifics/bullet');
 require('./specifics/drag-drop-helpers');
 require('./specifics/crumb');
 require('./specifics/outline-add');
+require('./specifics/display-checkbox');
 
 require('./actions/operation-actions');
 require('./actions/superficial-actions');
@@ -1034,7 +1072,7 @@ actions = require('./actions/actions');
 
 window.mapping = mapping;
 
-},{"./actions/actions":12,"./actions/drag-drop-actions":13,"./actions/operation-actions":16,"./actions/superficial-actions":17,"./specifics/body":20,"./specifics/bullet":21,"./specifics/clear-date":22,"./specifics/clear-priority":23,"./specifics/crumb":24,"./specifics/date-box":25,"./specifics/date-indicator":26,"./specifics/drag-drop-helpers":27,"./specifics/note-content":28,"./specifics/outline-add":29,"./specifics/panel":30,"./specifics/toggle":31,"./specifics/window":32}],20:[function(require,module,exports){
+},{"./actions/actions":12,"./actions/drag-drop-actions":13,"./actions/operation-actions":16,"./actions/superficial-actions":17,"./specifics/body":20,"./specifics/bullet":21,"./specifics/clear-date":22,"./specifics/clear-priority":23,"./specifics/crumb":24,"./specifics/date-box":25,"./specifics/date-indicator":26,"./specifics/display-checkbox":27,"./specifics/drag-drop-helpers":28,"./specifics/note-content":29,"./specifics/outline-add":30,"./specifics/panel":31,"./specifics/toggle":32,"./specifics/window":33}],20:[function(require,module,exports){
 new Mapping('body', {
   'keydown': function(e){
     switch(e.keyCode){
@@ -1103,11 +1141,16 @@ new Mapping('date-indicator', {
 });
 
 },{}],27:[function(require,module,exports){
+new Mapping('display-checkbox', {
+  'click': 'FILTER_DISPLAY'
+});
+
+},{}],28:[function(require,module,exports){
 new Mapping('drag-drop-helper', {
   'dragenter': 'DRAGENTER'
 });
 
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 var caret = require('../../../utils/caret');
 
 new Mapping('note-content', {
@@ -1164,12 +1207,12 @@ new Mapping('note-content', {
   'focusout': 'FORCE_THROTTLE'
 });
 
-},{"../../../utils/caret":41}],29:[function(require,module,exports){
+},{"../../../utils/caret":42}],30:[function(require,module,exports){
 new Mapping('outline-add', {
   'click': 'ADD_FIRST_CHILD'
 });
 
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 new Mapping('panel', {
   'click': 'PANEL_SLIDE'
 });
@@ -1178,12 +1221,12 @@ new Mapping('panel-corner', {
   'click': 'PANEL_FLIP'
 });
 
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 new Mapping('toggle', {
   'click': 'TOGGLE_CHILDREN'
 });
 
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 var domHelpers = require('../../../dom/dom-helpers');
 
 new Mapping('window', {
@@ -1209,7 +1252,7 @@ new Mapping('window', {
   }
 });
 
-},{"../../../dom/dom-helpers":3}],33:[function(require,module,exports){
+},{"../../../dom/dom-helpers":3}],34:[function(require,module,exports){
 var ajax = require('../utils/ajax');
 
 module.exports = model = {};
@@ -1237,7 +1280,7 @@ model.update = function(newModel){
   });
 }
 
-},{"../utils/ajax":40}],34:[function(require,module,exports){
+},{"../utils/ajax":41}],35:[function(require,module,exports){
 var Tree = require('../../shared/operations/Tree');
 
 module.exports = changeHistory = {};
@@ -1276,7 +1319,7 @@ changeHistory.rollback = function(index){
   model.names = tree.model.names;
 }
 
-},{"../../shared/operations/Tree":45}],35:[function(require,module,exports){
+},{"../../shared/operations/Tree":46}],36:[function(require,module,exports){
 var model = require('../model/model');
 
 module.exports = function(actions){
@@ -1307,7 +1350,7 @@ function getInverse(action){
   }
 }
 
-},{"../model/model":33}],36:[function(require,module,exports){
+},{"../model/model":34}],37:[function(require,module,exports){
 //carry out the operation on the current model, update the results, and draw the results
 var model = require('../model/model');
 var Tree = require('../../shared/operations/Tree');
@@ -1337,7 +1380,7 @@ module.exports = function(operations){
   return deepInverse;
 }
 
-},{"../../shared/operations/Tree":45,"../../shared/operations/get-deep-inverse":48,"../dom/draw-changes":4,"../model/model":33,"../temp-order-notes":39}],37:[function(require,module,exports){
+},{"../../shared/operations/Tree":46,"../../shared/operations/get-deep-inverse":49,"../dom/draw-changes":4,"../model/model":34,"../temp-order-notes":40}],38:[function(require,module,exports){
 var pollSeconds = 5;
 
 var operate = require('./operate');
@@ -1414,7 +1457,7 @@ window.setInterval(sync.sync, pollSeconds * 1000);
 
 window.sync = sync;
 
-},{"../utils/ajax":40,"./change-history":34,"./operate":36}],38:[function(require,module,exports){
+},{"../utils/ajax":41,"./change-history":35,"./operate":37}],39:[function(require,module,exports){
 var syncStack = require('./sync-stack');
 var getInverse = require('./get-inverse');
 
@@ -1452,7 +1495,7 @@ undoRedo.undo = function(){
 
 window.undoRedo = undoRedo;
 
-},{"./get-inverse":35,"./sync-stack":37}],39:[function(require,module,exports){
+},{"./get-inverse":36,"./sync-stack":38}],40:[function(require,module,exports){
 module.exports = function(childrenRaw){
   var children = [];
   var precedingId = null;
@@ -1464,7 +1507,7 @@ module.exports = function(childrenRaw){
   return children;
 }
 
-},{}],40:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 function ajax(method, callback, data){
 
   if(data == null) data = {};
@@ -1502,7 +1545,7 @@ module.exports = {
   put
 }
 
-},{}],41:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 module.exports = {
   get,
   set,
@@ -1570,7 +1613,7 @@ function caretAtEnd(div){
   else return false;
 }
 
-},{}],42:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 module.exports = function(date){
   date = new Date(date);
   if(date == 'Invalid Date') return '';
@@ -1606,7 +1649,7 @@ function day(date, mod){
   return day;
 }
 
-},{}],43:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 module.exports = function(el){
   if(el.closest('.holdingPen') == null){
     //make sure it's not a hidden child of a collapsed element
@@ -1619,12 +1662,12 @@ module.exports = function(el){
   else return false;
 }
 
-},{}],44:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 module.exports = function(string){
   return string[0].toUpperCase()+string.substr(1).toLowerCase();
 }
 
-},{}],45:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 const defaultNoteObject = require('./default-note-object');
 const waterfalls = require('./waterfalls');
 
@@ -1785,7 +1828,7 @@ Tree.prototype.apply = function(changes){
 
 module.exports = Tree;
 
-},{"./default-note-object":46,"./waterfalls":49}],46:[function(require,module,exports){
+},{"./default-note-object":47,"./waterfalls":50}],47:[function(require,module,exports){
 module.exports = function(id){
   return {
     id: id,
@@ -1793,12 +1836,12 @@ module.exports = function(id){
   };
 }
 
-},{}],47:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 module.exports = function(){
   return btoa(Date.now().toString()+Math.round(Math.random()*100000).toString());
 }
 
-},{}],48:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 module.exports = function(changes, model){
   var inverseChanges = {};
   Object.getOwnPropertyNames(changes).forEach(function(id){
@@ -1811,7 +1854,7 @@ module.exports = function(changes, model){
   return inverseChanges;
 }
 
-},{}],49:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 module.exports = {
   //triggerProp: waterfallProp,
   "isComplete": "isDescendantOfComplete",
@@ -1819,7 +1862,7 @@ module.exports = {
   "dueDate": "effectiveDueDate"
 };
 
-},{}],50:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 var undoRedo = require('../../frontend/operations-wrappers/undo-redo');
 
 module.exports = function(id, text, cases){
@@ -1880,14 +1923,14 @@ module.exports = function(id, text, cases){
   if(operations.length > 0) undoRedo.new(operations);
 }
 
-},{"../../frontend/operations-wrappers/undo-redo":38}],51:[function(require,module,exports){
+},{"../../frontend/operations-wrappers/undo-redo":39}],52:[function(require,module,exports){
 module.exports = [
   'normal',
   'important',
   'critical'
 ];
 
-},{}],52:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 const process = require('./generic-process-text');
 const priority = require('./properties/priority');
 
@@ -2011,4 +2054,4 @@ function getNextXDay(date, day, explicitNext){ //0 = monday
   return tempDate;
 }
 
-},{"./generic-process-text":50,"./properties/priority":51}]},{},[1]);
+},{"./generic-process-text":51,"./properties/priority":52}]},{},[1]);

@@ -1,5 +1,13 @@
 .priority{
   font-size: .8em;
+  display: none;
+}
+
+.displayEffectivePriority .priority{
+  display: inline-block;
+}
+
+.displayPriority [data-prop-priority].priority{
   display: inline-block;
 }
 
@@ -8,10 +16,11 @@
   display: inline-block;
   border-left: 3px solid;
 }
-.priority:not([data-prop-priority])[data-prop-effective-priority="normal"]::before{
-  display: none;
-}
 .priority[data-prop-effective-priority="normal"]::before{
+  border-left: none;
+}
+.priority[data-prop-priority="normal"][data-prop-effective-priority="normal"]::before{
+  border-left: 3px solid;
   border-left-color: lightgreen;
 }
 .priority[data-prop-effective-priority="important"]::before{

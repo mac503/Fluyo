@@ -313,11 +313,16 @@ div, input{
   height: 100%;
   width: 100%;
 }
-.filterComponent{
-  min-height: 1em;
-}
 .priority{
   font-size: .8em;
+  display: none;
+}
+
+.displayEffectivePriority .priority{
+  display: inline-block;
+}
+
+.displayPriority [data-prop-priority].priority{
   display: inline-block;
 }
 
@@ -326,10 +331,11 @@ div, input{
   display: inline-block;
   border-left: 3px solid;
 }
-.priority:not([data-prop-priority])[data-prop-effective-priority="normal"]::before{
-  display: none;
-}
 .priority[data-prop-effective-priority="normal"]::before{
+  border-left: none;
+}
+.priority[data-prop-priority="normal"][data-prop-effective-priority="normal"]::before{
+  border-left: 3px solid;
   border-left-color: lightgreen;
 }
 .priority[data-prop-effective-priority="important"]::before{
@@ -352,16 +358,17 @@ div, input{
   cursor: pointer;
   padding-left: .2em;
 }
-.dueDate:not([data-prop-effective-due-date]){
-  display: none;
+.displayDueDates .dueDate[data-prop-due-date]:not([data-prop-effective-due-date=""]){
+  display: inline-block;
 }
-.dueDate[data-prop-effective-due-date=""]{
-  display: none;
+
+.displayEffectiveDueDates .dueDate:not([data-prop-effective-due-date=""]){
+  display: inline-block;
 }
 
 .dueDate{
   position: relative;
-  display: inline-block;
+  display: none;
   user-select: none;
   cursor: pointer;
   font-size: .8em;
@@ -615,6 +622,35 @@ body:not(.dragging) .dragDropHelperTop, body:not(.dragging) .dragDropHelperBotto
   margin-left: 2em;
   border-left: 1px solid #E9E9E9;
   padding-left: .2em;
+}
+.filterComponent{
+  min-height: 1em;
+  max-height: 1em;
+  opacity: 0;
+  transition: all 0.5s;
+  font-size: .8em;
+  font-weight: bold;
+  display: flex;
+  margin-left: 2em;
+  margin-right: 2em;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.filterComponent:hover{
+  max-height: 100vh;
+  opacity: 1;
+  margin-bottom: .5em;
+}
+
+.filterComponent>div{
+  text-align: center;
+  margin-right: .5em;
+  margin-left: .5em;
+  background-color: #f9f9f9;
+  padding: 2px;
+  border-radius: 2px;
 }
 .holdingPen{
   display: none;

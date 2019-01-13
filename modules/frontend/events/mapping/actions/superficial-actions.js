@@ -90,3 +90,9 @@ function drawBreadcrumbs(bullet, container){
   output = `<span data-target='' data-events-handler='crumb'>…</span>` + output;
   bullet.closest('[data-outline-component]').querySelector('.breadcrumbs').innerHTML = output;
 }
+
+new Action('FILTER_DISPLAY', function(e){
+  var component = e.target.closest('[data-outline-component]');
+  if(e.target.checked) component.classList.add(e.target.dataset.displayClass);
+  else component.classList.remove(e.target.dataset.displayClass);
+});

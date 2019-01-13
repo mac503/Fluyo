@@ -1,0 +1,29 @@
+.filterComponent{
+  min-height: 1em;
+  max-height: 1em;
+  opacity: 0;
+  transition: all 0.5s;
+  font-size: .8em;
+  font-weight: bold;
+  display: flex;
+  margin-left: 2em;
+  margin-right: 2em;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.filterComponent:hover{
+  max-height: 100vh;
+  opacity: 1;
+  margin-bottom: .5em;
+}
+
+.filterComponent>div{
+  text-align: center;
+  margin-right: .5em;
+  margin-left: .5em;
+  background-color: #f9f9f9;
+  padding: 2px;
+  border-radius: 2px;
+}

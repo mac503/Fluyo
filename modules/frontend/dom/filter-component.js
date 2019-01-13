@@ -1,5 +1,14 @@
 module.exports = `
-<div class='filterComponent'></div>
+<div class='filterComponent'>
+  <div>
+    Due Date<br>
+    <input type='checkbox' data-events-handler='display-checkbox' data-display-class='displayDueDates'> <input type='checkbox' data-events-handler='display-checkbox' data-display-class='displayEffectiveDueDates'>
+  </div>
+  <div>
+    Priority<br>
+    <input type='checkbox' data-events-handler='display-checkbox' data-display-class='displayPriority'> <input type='checkbox' data-events-handler='display-checkbox' data-display-class='displayEffectivePriority'>
+  </div>
+</div>
 `;
 
 /*
