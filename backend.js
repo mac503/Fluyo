@@ -40,13 +40,13 @@ app.use(bodyParser.json());
 app.get('/reset', function(req, res){
   var notes = [
     {id:'DELETED', content:'', parentId:null},
-    {id:'OUTLINE', content:'', priority:2, effectiveDueDate:0, parentId:null},
-    {id:'INBOX', content:'', priority:1, effectiveDueDate:0, parentId:null},
+    {id:'OUTLINE', content:'', effectivePriority:0, effectiveDueDate:0, parentId:null},
+    {id:'INBOX', content:'', effectivePriority:0, effectiveDueDate:0, parentId:null},
     {id:'NEW', content:'', parentId:null},
-    {id:'1', content:'One', parentId:'OUTLINE'},
-    {id:'2', content:'Two', parentId:'OUTLINE', precedingId:'1'},
-    {id:'3', content:'Three', parentId:'OUTLINE', precedingId:'2'},
-    {id:'inbox1', content:'I am in the inbox', parentId:'INBOX', precedingId:null}
+    {id:'1', content:'One', parentId:'OUTLINE', effectivePriority: 0},
+    {id:'2', content:'Two', parentId:'OUTLINE', precedingId:'1', effectivePriority: 0},
+    {id:'3', content:'Three', parentId:'OUTLINE', precedingId:'2', effectivePriority: 0},
+    {id:'inbox1', content:'I am in the inbox', parentId:'INBOX', precedingId:null, effectivePriority: 0}
   ];
   knex('notes').del()
   .then(() => knex('changes').del())

@@ -13,7 +13,7 @@
   cursor: pointer;
   font-size: .8em;
 }
-.dueDate::before{
+[data-prop-effective-due-date].dueDate::before{
   display: inline-block;
   content: '\231A\00A0' attr(data-prop-effective-due-date);
 }

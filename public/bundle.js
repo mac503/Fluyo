@@ -2027,6 +2027,16 @@ var cases = [
     getReplaceValue: (match, groups, original)=>{
       return '';
     }
+  },
+  {
+    prop: 'timeEstimate',
+    regex: /(^|\s)(?:~(?:(?:(\d+(?:.\d+)?)h)|(\d+)))(\s)/,
+    defaultWrap: false,
+    getUpdateValue: function(match, groups, original){
+      if(groups[1]) return parseInt(groups[1]) * 60;
+      else return groups[2];
+    },
+    getReplaceValue: ()=>'',
   }
 ];
 
