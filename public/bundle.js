@@ -2043,10 +2043,12 @@ var cases = [
   },
   {
     prop: 'timeEstimate',
-    regex: /(^|\s)(?:~(?:(?:(\d+(?:.\d+)?)h)|(\d+)))(\s)/,
+    regex: /(^|\s)(?:~(?:(?:(\d+(?:.\d+)?)h)|((?:\d+|-))))(\s)/,
     defaultWrap: false,
     getUpdateValue: function(match, groups, original){
-      if(groups[1]) return parseInt(groups[1]) * 60;
+      if(groups[1]) return null;
+      else if(groups[1]) return parseInt(groups[1]) * 60;
+      else if(groups[2] == '-') return null;
       else return groups[2];
     },
     getReplaceValue: ()=>'',
