@@ -26,6 +26,8 @@ require('./specifics/date-indicator');
 require('./specifics/date-box');
 require('./specifics/bullet');
 require('./specifics/drag-drop-helpers');
+require('./specifics/crumb');
+require('./specifics/outline-add');
 
 require('./actions/operation-actions');
 require('./actions/superficial-actions');

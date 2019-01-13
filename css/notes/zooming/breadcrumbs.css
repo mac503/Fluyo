@@ -1,0 +1,21 @@
+.breadcrumbs{
+  display: none;
+}
+.zooming .breadcrumbs{
+  display: block;
+  margin-left: 2em;
+}
+.breadcrumbs span{
+  color: gray;
+  cursor: pointer;
+}
+.breadcrumbs span::before{
+  cursor: default;
+  color: lightgray;
+  content: "";
+  padding-right: .5em;
+  padding-left: .5em;
+}
+.breadcrumbs span:not(:first-child)::before{
+  content: ">";
+}

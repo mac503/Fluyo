@@ -13,7 +13,7 @@ require('./modules/frontend/model/model').initialise(function(model){
   //perhaps load any display settings saved in localstorage if necessary?
 });
 
-},{"./modules/frontend/dom/initial-draw":6,"./modules/frontend/events/listeners":11,"./modules/frontend/model/model":31,"./modules/frontend/operations-wrappers/change-history":32}],2:[function(require,module,exports){
+},{"./modules/frontend/dom/initial-draw":6,"./modules/frontend/events/listeners":11,"./modules/frontend/model/model":33,"./modules/frontend/operations-wrappers/change-history":34}],2:[function(require,module,exports){
 module.exports = {drawBox, updateBox, updateSelected, test};
 
 function drawBox(date, target, selected){
@@ -390,8 +390,10 @@ module.exports = function(topLevelId){
   div.dataset.id = topLevelId;
   div.innerHTML = `
     ${filterComponent}
+    ${topLevelId == 'INBOX' ? `<div class='title'>Inbox</div>` : ''}
+    <div class='breadcrumbs'></div>
     <div class='notesContainer' data-id='${topLevelId}'>
-      <div class='children'></div>
+      <div class='children' data-events-handler='outline-add'></div>
     </div>
     <div class='holdingPen'></div>
   `;
@@ -430,7 +432,7 @@ module.exports = function(id, changes){
   });
 }
 
-},{"../model/model":31,"./new-note-div":7,"./update-note-node":10}],10:[function(require,module,exports){
+},{"../model/model":33,"./new-note-div":7,"./update-note-node":10}],10:[function(require,module,exports){
 var domHelpers = require('./dom-helpers');
 var caret = require('../utils/caret');
 var isVisible = require('../utils/is-visible');
@@ -470,6 +472,13 @@ module.exports = function(div, changes, initialDraw=false){
       prop:'effectiveDueDate',
       selector: '.dueDate',
       process: x=>friendlyDate(x)
+    },
+    {
+      prop:'effectiveDueDate',
+      selector: '.contentHolder',
+      process: x=>{
+        return (new Date(x) - new Date()) / 86400000 < 5 ? 'due' : '';
+      }
     },
     {
       prop:'dueDate',
@@ -540,7 +549,7 @@ module.exports = function(div, changes, initialDraw=false){
   }
 }
 
-},{"../../shared/text-processing/properties/priority":49,"../utils/caret":39,"../utils/friendly-date":40,"../utils/is-visible":41,"../utils/proper-case":42,"./dom-helpers":3}],11:[function(require,module,exports){
+},{"../../shared/text-processing/properties/priority":51,"../utils/caret":41,"../utils/friendly-date":42,"../utils/is-visible":43,"../utils/proper-case":44,"./dom-helpers":3}],11:[function(require,module,exports){
 //listen for these events
 var events = ['click', 'input', 'focusin', 'focusout', 'beforeunload', 'keydown', 'hashchange', 'dragstart', 'dragenter', 'dragend'];
 
@@ -552,7 +561,7 @@ module.exports = function(model){
   //pass to relevant handlers
   events.forEach(function(event){
     window.addEventListener(event, function(e){
-      //console.log(e);
+      console.log(e);
       var t = e.target;
 
       //catch unloading
@@ -570,7 +579,7 @@ module.exports = function(model){
 
 }
 
-},{"../utils/proper-case":42,"./mapping/mapping":19}],12:[function(require,module,exports){
+},{"../utils/proper-case":44,"./mapping/mapping":19}],12:[function(require,module,exports){
 module.exports = {};
 
 },{}],13:[function(require,module,exports){
@@ -622,7 +631,7 @@ function removeHovers(){
   });
 }
 
-},{"../../../model/model":31,"./get-id-from-dom-element":14,"./new-action":15}],14:[function(require,module,exports){
+},{"../../../model/model":33,"./get-id-from-dom-element":14,"./new-action":15}],14:[function(require,module,exports){
 module.exports = function(element){
   var note = element.closest('.note');
   if(note != null){
@@ -713,8 +722,9 @@ new Action('ENTER_NEW_NOTE', function(e, model){
   var newParentId, newPrecedingId, newContent;
   var operations = [];
   var pos = caret.pos(e.target);
+  var isZoom = e.target.closest('.note').classList.contains('zoom');
   //note has content, we are in the middle or at the beginning (i.e. not at the end): create new note above with the content to the left of the cursor
-  if(pos != 'empty' && pos != 'end'){
+  if(isZoom == false && pos != 'empty' && pos != 'end'){
     if(pos == 'middle'){
       newContent = e.target.innerText.substr(0, caret.get(e.target));
       //also update content of current note to remove content to the left of cursor
@@ -726,7 +736,7 @@ new Action('ENTER_NEW_NOTE', function(e, model){
     else newPrecedingId = null;
   }
   //note has children (search only for VISIBLE children): create new note as first child of current note
-  else if(domHelpers.children(e.target, 'visible').length > 0){
+  else if(isZoom || domHelpers.children(e.target, 'visible').length > 0){
     newParentId = id;
     newPrecedingId = null;
   }
@@ -754,6 +764,12 @@ function waitTillDivDrawn(obj, selector, callback){
   });
 }
 
+new Action('ADD_FIRST_CHILD', function(e, model){
+  var parentId = e.target.closest('.notesContainer').dataset.id;
+  var newId = generateId();
+  undoRedo.new([{id:newId, operation:'create', data:{parentId:parentId, precedingId:null}}]);
+  e.target.querySelector('.note .content').focus();
+});
 
 new Action('TOGGLE_COMPLETE', function(e, model){
   e.preventDefault();
@@ -765,6 +781,7 @@ new Action('TOGGLE_COMPLETE', function(e, model){
 
 new Action('BACKSPACE_DELETE_NOTE', function(e, model){
   e.preventDefault();
+  if(e.target.closest('.note').classList.contains('zoom')) return;
   var id = getId(e.target);
   var prev = domHelpers.prevSibling(e.target, 'visible');
   if(prev && prev.querySelector('.content').innerText == ''){
@@ -851,7 +868,7 @@ new Action('HIDE_DATE_BOX', function(e){
   thisBox.parentNode.removeChild(thisBox);
 });
 
-},{"../../../../shared/operations/generate-id":45,"../../../../shared/text-processing/snap":50,"../../../dom/date-box":2,"../../../dom/dom-helpers":3,"../../../operations-wrappers/undo-redo":36,"../../../utils/caret":39,"./get-id-from-dom-element":14,"./new-action":15,"./throttle":18}],17:[function(require,module,exports){
+},{"../../../../shared/operations/generate-id":47,"../../../../shared/text-processing/snap":52,"../../../dom/date-box":2,"../../../dom/dom-helpers":3,"../../../operations-wrappers/undo-redo":38,"../../../utils/caret":41,"./get-id-from-dom-element":14,"./new-action":15,"./throttle":18}],17:[function(require,module,exports){
 var sync = require('../../../operations-wrappers/sync-stack');
 var domHelpers = require('../../../dom/dom-helpers');
 var caret = require('../../../utils/caret');
@@ -914,7 +931,38 @@ new Action('PANEL_FLIP', function(e){
   e.target.closest('.panel').classList.toggle('flipped');
 });
 
-},{"../../../dom/dom-helpers":3,"../../../operations-wrappers/sync-stack":35,"../../../utils/caret":39,"./new-action":15}],18:[function(require,module,exports){
+new Action('ZOOM', function(e){
+  var container;
+  if(e.target.classList.contains('bullet')) container = e.target.closest('.notesContainer');
+  else{
+    container = e.target.closest('[data-outline-component]').querySelector('.notesContainer');
+    //if necessary, exit out of zooming mode
+    if(e.target.dataset.target == ''){
+      container.closest('[data-outline-component]').classList.remove('zooming');
+      container.querySelector('.zoom').classList.remove('zoom');
+      return;
+    }
+  }
+  container.parentNode.classList.add('zooming');
+  if(container.querySelector('.zoom')) container.querySelector('.zoom').classList.remove('zoom');
+  var note;
+  if(e.target.classList.contains('bullet')) note = e.target.closest('.note');
+  else note = container.querySelector(`[data-id="${e.target.dataset.target}"]`);
+  drawBreadcrumbs(note.querySelector('.bullet'), container);
+  note.classList.add('zoom');
+});
+
+function drawBreadcrumbs(bullet, container){
+  var crumb = bullet;
+  output = '';
+  while(crumb = crumb.parentNode.closest('.note')){
+    output = `<span data-target='${crumb.dataset.id}' data-events-handler='crumb'>${crumb.querySelector('.content').innerHTML}</span>` + output;
+  }
+  output = `<span data-target='' data-events-handler='crumb'>…</span>` + output;
+  bullet.closest('[data-outline-component]').querySelector('.breadcrumbs').innerHTML = output;
+}
+
+},{"../../../dom/dom-helpers":3,"../../../operations-wrappers/sync-stack":37,"../../../utils/caret":41,"./new-action":15}],18:[function(require,module,exports){
 var undoRedo = require('../../../operations-wrappers/undo-redo');
 
 var timeoutSeconds = 1;
@@ -947,7 +995,7 @@ Throttle.prototype.clear = function(){
 
 module.exports = new Throttle(timeoutSeconds);
 
-},{"../../../operations-wrappers/undo-redo":36}],19:[function(require,module,exports){
+},{"../../../operations-wrappers/undo-redo":38}],19:[function(require,module,exports){
 module.exports = mapping = [];
 
 Mapping = function(name, eventsToActions){
@@ -976,6 +1024,8 @@ require('./specifics/date-indicator');
 require('./specifics/date-box');
 require('./specifics/bullet');
 require('./specifics/drag-drop-helpers');
+require('./specifics/crumb');
+require('./specifics/outline-add');
 
 require('./actions/operation-actions');
 require('./actions/superficial-actions');
@@ -984,7 +1034,7 @@ actions = require('./actions/actions');
 
 window.mapping = mapping;
 
-},{"./actions/actions":12,"./actions/drag-drop-actions":13,"./actions/operation-actions":16,"./actions/superficial-actions":17,"./specifics/body":20,"./specifics/bullet":21,"./specifics/clear-date":22,"./specifics/clear-priority":23,"./specifics/date-box":24,"./specifics/date-indicator":25,"./specifics/drag-drop-helpers":26,"./specifics/note-content":27,"./specifics/panel":28,"./specifics/toggle":29,"./specifics/window":30}],20:[function(require,module,exports){
+},{"./actions/actions":12,"./actions/drag-drop-actions":13,"./actions/operation-actions":16,"./actions/superficial-actions":17,"./specifics/body":20,"./specifics/bullet":21,"./specifics/clear-date":22,"./specifics/clear-priority":23,"./specifics/crumb":24,"./specifics/date-box":25,"./specifics/date-indicator":26,"./specifics/drag-drop-helpers":27,"./specifics/note-content":28,"./specifics/outline-add":29,"./specifics/panel":30,"./specifics/toggle":31,"./specifics/window":32}],20:[function(require,module,exports){
 new Mapping('body', {
   'keydown': function(e){
     switch(e.keyCode){
@@ -1015,7 +1065,8 @@ new Mapping('body', {
 },{}],21:[function(require,module,exports){
 new Mapping('bullet', {
   'dragstart': 'DRAGSTART',
-  'dragend': 'DRAGEND'
+  'dragend': 'DRAGEND',
+  'click': 'ZOOM'
 });
 
 },{}],22:[function(require,module,exports){
@@ -1029,6 +1080,11 @@ new Mapping('clear-priority', {
 });
 
 },{}],24:[function(require,module,exports){
+new Mapping('crumb', {
+  'click': 'ZOOM'
+});
+
+},{}],25:[function(require,module,exports){
 new Mapping('date-box-date', {
   'click': 'CHOOSE_DATE'
 });
@@ -1041,17 +1097,17 @@ new Mapping('date-box-click-cover', {
   'click': 'HIDE_DATE_BOX'
 });
 
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 new Mapping('date-indicator', {
   'click': 'PICK_DATE'
 });
 
-},{}],26:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
 new Mapping('drag-drop-helper', {
   'dragenter': 'DRAGENTER'
 });
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 var caret = require('../../../utils/caret');
 
 new Mapping('note-content', {
@@ -1108,7 +1164,12 @@ new Mapping('note-content', {
   'focusout': 'FORCE_THROTTLE'
 });
 
-},{"../../../utils/caret":39}],28:[function(require,module,exports){
+},{"../../../utils/caret":41}],29:[function(require,module,exports){
+new Mapping('outline-add', {
+  'click': 'ADD_FIRST_CHILD'
+});
+
+},{}],30:[function(require,module,exports){
 new Mapping('panel', {
   'click': 'PANEL_SLIDE'
 });
@@ -1117,12 +1178,12 @@ new Mapping('panel-corner', {
   'click': 'PANEL_FLIP'
 });
 
-},{}],29:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 new Mapping('toggle', {
   'click': 'TOGGLE_CHILDREN'
 });
 
-},{}],30:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 var domHelpers = require('../../../dom/dom-helpers');
 
 new Mapping('window', {
@@ -1148,7 +1209,7 @@ new Mapping('window', {
   }
 });
 
-},{"../../../dom/dom-helpers":3}],31:[function(require,module,exports){
+},{"../../../dom/dom-helpers":3}],33:[function(require,module,exports){
 var ajax = require('../utils/ajax');
 
 module.exports = model = {};
@@ -1176,7 +1237,7 @@ model.update = function(newModel){
   });
 }
 
-},{"../utils/ajax":38}],32:[function(require,module,exports){
+},{"../utils/ajax":40}],34:[function(require,module,exports){
 var Tree = require('../../shared/operations/Tree');
 
 module.exports = changeHistory = {};
@@ -1215,7 +1276,7 @@ changeHistory.rollback = function(index){
   model.names = tree.model.names;
 }
 
-},{"../../shared/operations/Tree":43}],33:[function(require,module,exports){
+},{"../../shared/operations/Tree":45}],35:[function(require,module,exports){
 var model = require('../model/model');
 
 module.exports = function(actions){
@@ -1246,7 +1307,7 @@ function getInverse(action){
   }
 }
 
-},{"../model/model":31}],34:[function(require,module,exports){
+},{"../model/model":33}],36:[function(require,module,exports){
 //carry out the operation on the current model, update the results, and draw the results
 var model = require('../model/model');
 var Tree = require('../../shared/operations/Tree');
@@ -1276,7 +1337,7 @@ module.exports = function(operations){
   return deepInverse;
 }
 
-},{"../../shared/operations/Tree":43,"../../shared/operations/get-deep-inverse":46,"../dom/draw-changes":4,"../model/model":31,"../temp-order-notes":37}],35:[function(require,module,exports){
+},{"../../shared/operations/Tree":45,"../../shared/operations/get-deep-inverse":48,"../dom/draw-changes":4,"../model/model":33,"../temp-order-notes":39}],37:[function(require,module,exports){
 var pollSeconds = 5;
 
 var operate = require('./operate');
@@ -1353,7 +1414,7 @@ window.setInterval(sync.sync, pollSeconds * 1000);
 
 window.sync = sync;
 
-},{"../utils/ajax":38,"./change-history":32,"./operate":34}],36:[function(require,module,exports){
+},{"../utils/ajax":40,"./change-history":34,"./operate":36}],38:[function(require,module,exports){
 var syncStack = require('./sync-stack');
 var getInverse = require('./get-inverse');
 
@@ -1391,7 +1452,7 @@ undoRedo.undo = function(){
 
 window.undoRedo = undoRedo;
 
-},{"./get-inverse":33,"./sync-stack":35}],37:[function(require,module,exports){
+},{"./get-inverse":35,"./sync-stack":37}],39:[function(require,module,exports){
 module.exports = function(childrenRaw){
   var children = [];
   var precedingId = null;
@@ -1403,7 +1464,7 @@ module.exports = function(childrenRaw){
   return children;
 }
 
-},{}],38:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 function ajax(method, callback, data){
 
   if(data == null) data = {};
@@ -1441,7 +1502,7 @@ module.exports = {
   put
 }
 
-},{}],39:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 module.exports = {
   get,
   set,
@@ -1509,7 +1570,7 @@ function caretAtEnd(div){
   else return false;
 }
 
-},{}],40:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 module.exports = function(date){
   date = new Date(date);
   if(date == 'Invalid Date') return '';
@@ -1545,7 +1606,7 @@ function day(date, mod){
   return day;
 }
 
-},{}],41:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 module.exports = function(el){
   if(el.closest('.holdingPen') == null){
     //make sure it's not a hidden child of a collapsed element
@@ -1558,12 +1619,12 @@ module.exports = function(el){
   else return false;
 }
 
-},{}],42:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 module.exports = function(string){
   return string[0].toUpperCase()+string.substr(1).toLowerCase();
 }
 
-},{}],43:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 const defaultNoteObject = require('./default-note-object');
 const waterfalls = require('./waterfalls');
 
@@ -1724,7 +1785,7 @@ Tree.prototype.apply = function(changes){
 
 module.exports = Tree;
 
-},{"./default-note-object":44,"./waterfalls":47}],44:[function(require,module,exports){
+},{"./default-note-object":46,"./waterfalls":49}],46:[function(require,module,exports){
 module.exports = function(id){
   return {
     id: id,
@@ -1732,12 +1793,12 @@ module.exports = function(id){
   };
 }
 
-},{}],45:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 module.exports = function(){
   return btoa(Date.now().toString()+Math.round(Math.random()*100000).toString());
 }
 
-},{}],46:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 module.exports = function(changes, model){
   var inverseChanges = {};
   Object.getOwnPropertyNames(changes).forEach(function(id){
@@ -1750,7 +1811,7 @@ module.exports = function(changes, model){
   return inverseChanges;
 }
 
-},{}],47:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 module.exports = {
   //triggerProp: waterfallProp,
   "isComplete": "isDescendantOfComplete",
@@ -1758,7 +1819,7 @@ module.exports = {
   "dueDate": "effectiveDueDate"
 };
 
-},{}],48:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 var undoRedo = require('../../frontend/operations-wrappers/undo-redo');
 
 module.exports = function(id, text, cases){
@@ -1819,14 +1880,14 @@ module.exports = function(id, text, cases){
   if(operations.length > 0) undoRedo.new(operations);
 }
 
-},{"../../frontend/operations-wrappers/undo-redo":36}],49:[function(require,module,exports){
+},{"../../frontend/operations-wrappers/undo-redo":38}],51:[function(require,module,exports){
 module.exports = [
   'normal',
   'important',
   'critical'
 ];
 
-},{}],50:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 const process = require('./generic-process-text');
 const priority = require('./properties/priority');
 
@@ -1950,4 +2011,4 @@ function getNextXDay(date, day, explicitNext){ //0 = monday
   return tempDate;
 }
 
-},{"./generic-process-text":48,"./properties/priority":49}]},{},[1]);
+},{"./generic-process-text":50,"./properties/priority":51}]},{},[1]);

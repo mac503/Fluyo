@@ -1,3 +1,14 @@
 .holdingPen{
   display: none;
 }
+
+.notesContainer{
+  height: calc(100% - 70px);
+  max-height: calc(100% - 70px);
+  overflow-x: auto;
+  overflow-y: scroll;
+}
+[data-top-level-id="INBOX"] .notesContainer{
+  height: calc(100% - 100px);
+  max-height: calc(100% - 100px);
+}

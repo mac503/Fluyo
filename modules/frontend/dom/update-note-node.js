@@ -39,6 +39,13 @@ module.exports = function(div, changes, initialDraw=false){
       process: x=>friendlyDate(x)
     },
     {
+      prop:'effectiveDueDate',
+      selector: '.contentHolder',
+      process: x=>{
+        return (new Date(x) - new Date()) / 86400000 < 5 ? 'due' : '';
+      }
+    },
+    {
       prop:'dueDate',
       selector: '.dueDate',
       process: x=>x

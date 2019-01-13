@@ -7,8 +7,10 @@ module.exports = function(topLevelId){
   div.dataset.id = topLevelId;
   div.innerHTML = `
     ${filterComponent}
+    ${topLevelId == 'INBOX' ? `<div class='title'>Inbox</div>` : ''}
+    <div class='breadcrumbs'></div>
     <div class='notesContainer' data-id='${topLevelId}'>
-      <div class='children'></div>
+      <div class='children' data-events-handler='outline-add'></div>
     </div>
     <div class='holdingPen'></div>
   `;

@@ -59,3 +59,34 @@ new Action('BEFORE_UNLOAD', function(e){
 new Action('PANEL_FLIP', function(e){
   e.target.closest('.panel').classList.toggle('flipped');
 });
+
+new Action('ZOOM', function(e){
+  var container;
+  if(e.target.classList.contains('bullet')) container = e.target.closest('.notesContainer');
+  else{
+    container = e.target.closest('[data-outline-component]').querySelector('.notesContainer');
+    //if necessary, exit out of zooming mode
+    if(e.target.dataset.target == ''){
+      container.closest('[data-outline-component]').classList.remove('zooming');
+      container.querySelector('.zoom').classList.remove('zoom');
+      return;
+    }
+  }
+  container.parentNode.classList.add('zooming');
+  if(container.querySelector('.zoom')) container.querySelector('.zoom').classList.remove('zoom');
+  var note;
+  if(e.target.classList.contains('bullet')) note = e.target.closest('.note');
+  else note = container.querySelector(`[data-id="${e.target.dataset.target}"]`);
+  drawBreadcrumbs(note.querySelector('.bullet'), container);
+  note.classList.add('zoom');
+});
+
+function drawBreadcrumbs(bullet, container){
+  var crumb = bullet;
+  output = '';
+  while(crumb = crumb.parentNode.closest('.note')){
+    output = `<span data-target='${crumb.dataset.id}' data-events-handler='crumb'>${crumb.querySelector('.content').innerHTML}</span>` + output;
+  }
+  output = `<span data-target='' data-events-handler='crumb'>…</span>` + output;
+  bullet.closest('[data-outline-component]').querySelector('.breadcrumbs').innerHTML = output;
+}

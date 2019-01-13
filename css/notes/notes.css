@@ -90,34 +90,3 @@
   border-left: 1px solid #E9E9E9;
   padding-left: .2em;
 }
-
-.zoom>.topLine>.left{
-  display: none;
-}
-.zoom>.topLine>.contentHolder>.content{
-  font-size: 24px;
-  font-weight: bold;
-}
-.zoom>.children{
-  margin-left: -.5em;
-  border-left: none;
-  margin-top: 1em;
-  padding-left: 0;
-}
-.zooming #outline .note:not(.zoom){
-  pointer-events: none;
-  visibility: hidden;
-  width: 100%;
-  position: initial;
-}
-.zoom{
-  position: absolute;
-  top:0;
-  left:0;
-  pointer-events: all;
-  visibility: visible;
-}
-.zooming #outline .zoom .note{
-  pointer-events: all;
-  visibility: visible;
-}

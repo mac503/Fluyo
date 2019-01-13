@@ -72,8 +72,9 @@ new Action('ENTER_NEW_NOTE', function(e, model){
   var newParentId, newPrecedingId, newContent;
   var operations = [];
   var pos = caret.pos(e.target);
+  var isZoom = e.target.closest('.note').classList.contains('zoom');
   //note has content, we are in the middle or at the beginning (i.e. not at the end): create new note above with the content to the left of the cursor
-  if(pos != 'empty' && pos != 'end'){
+  if(isZoom == false && pos != 'empty' && pos != 'end'){
     if(pos == 'middle'){
       newContent = e.target.innerText.substr(0, caret.get(e.target));
       //also update content of current note to remove content to the left of cursor
@@ -85,7 +86,7 @@ new Action('ENTER_NEW_NOTE', function(e, model){
     else newPrecedingId = null;
   }
   //note has children (search only for VISIBLE children): create new note as first child of current note
-  else if(domHelpers.children(e.target, 'visible').length > 0){
+  else if(isZoom || domHelpers.children(e.target, 'visible').length > 0){
     newParentId = id;
     newPrecedingId = null;
   }
@@ -113,6 +114,12 @@ function waitTillDivDrawn(obj, selector, callback){
   });
 }
 
+new Action('ADD_FIRST_CHILD', function(e, model){
+  var parentId = e.target.closest('.notesContainer').dataset.id;
+  var newId = generateId();
+  undoRedo.new([{id:newId, operation:'create', data:{parentId:parentId, precedingId:null}}]);
+  e.target.querySelector('.note .content').focus();
+});
 
 new Action('TOGGLE_COMPLETE', function(e, model){
   e.preventDefault();
@@ -124,6 +131,7 @@ new Action('TOGGLE_COMPLETE', function(e, model){
 
 new Action('BACKSPACE_DELETE_NOTE', function(e, model){
   e.preventDefault();
+  if(e.target.closest('.note').classList.contains('zoom')) return;
   var id = getId(e.target);
   var prev = domHelpers.prevSibling(e.target, 'visible');
   if(prev && prev.querySelector('.content').innerText == ''){

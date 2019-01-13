@@ -1,0 +1,51 @@
+.zoom>.topLine>.left{
+  display: none;
+}
+.zoom>.topLine>.contentHolder>.content{
+  font-size: 24px;
+  font-weight: bold;
+}
+.zoom.note>.children{
+  border-left: none;
+  margin-left: -1em;
+  padding-left: 0;
+}
+
+.zooming .note:not(.zoom){
+  visibility: hidden;
+  position: absolute;
+  width: 100%;
+  top:0;
+  left:0;
+}
+.zooming .note:not(.zoom)>.topLine{
+  pointer-events: none;
+}
+.zooming .note:not(.zoom)>.topLine{
+  opacity: 0;
+}
+.zoom{
+  position: absolute;
+  top: 1.5em;
+  left:0;
+  visibility: visible;
+}
+.notesContainer>.children>.zoom{
+  top: .3em;
+  left: 1.5em;
+}
+.zoom>.topLine{
+  pointer-events: all;
+  margin-top: .5em;
+  margin-bottom: .5em;
+}
+.zooming .zoom .note{
+  visibility: visible;
+  position: initial;
+}
+.zooming .zoom .note>.topLine{
+  pointer-events: all;
+}
+.zooming .zoom .note>.topLine{
+  opacity: 1;
+}

@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css?family=Droid+Sans|Open+Sans:700');
+
 body{
   overflow-x: hidden;
 }
@@ -32,15 +34,13 @@ body{
 
 
 .panel{
-  overflow-x: auto;
-  overflow-y: scroll;
   display: block;
   border: 1px solid lightgray;
   margin: 20px;
   padding: 10px;
   position: relative;
+  max-height: 100%;
 }
-
 
 /*==================================================
  * Effect 6
@@ -53,7 +53,19 @@ body{
             box-shadow:0 1px 4px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 0, 0, 0.1);
 }
 
-
 [data-id="DELETED"]{
   display: none;
+}
+
+.notesContainer>.children:empty::after{
+  content: '+';
+  font-size: 32px;
+  color: lightgray;
+  position: relative;
+  margin-left: 1em;
+}
+
+.notesContainer>.children:empty:hover::after{
+  color: gray;
+  cursor: pointer;
 }

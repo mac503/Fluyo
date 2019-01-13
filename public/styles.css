@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css?family=Droid+Sans|Open+Sans:700');
+
 body{
   overflow-x: hidden;
 }
@@ -32,15 +34,13 @@ body{
 
 
 .panel{
-  overflow-x: auto;
-  overflow-y: scroll;
   display: block;
   border: 1px solid lightgray;
   margin: 20px;
   padding: 10px;
   position: relative;
+  max-height: 100%;
 }
-
 
 /*==================================================
  * Effect 6
@@ -53,9 +53,30 @@ body{
             box-shadow:0 1px 4px rgba(0, 0, 0, 0.3), 0 0 40px rgba(0, 0, 0, 0.1);
 }
 
-
 [data-id="DELETED"]{
   display: none;
+}
+
+.notesContainer>.children:empty::after{
+  content: '+';
+  font-size: 32px;
+  color: lightgray;
+  position: relative;
+  margin-left: 1em;
+}
+
+.notesContainer>.children:empty:hover::after{
+  color: gray;
+  cursor: pointer;
+}
+.title{
+  font-size: 16px;
+  font-family: "Open Sans";
+  font-weight: 700;
+  width: 100%;
+  margin: auto;
+  text-align: center;
+  color: gray;
 }
 #saveIndicator{
   position: absolute;
@@ -108,7 +129,7 @@ body{
 }
 
 body{
-  font-family: Droid Sans;
+  font-family: 'Droid Sans';
   font-size: 13px;
   color: rgb(51, 51, 51);
   padding: 0px;
@@ -359,6 +380,10 @@ div, input{
   color: lightgray;
   padding-left: .2em;
 }
+
+.contentHolder[data-prop-effective-due-date="due"]>.dueDate::before{
+  color: red;
+}
 .dragDropHelperTop{
   display: block;
   background-color: rgba(255,0,0,0);
@@ -426,6 +451,78 @@ body:not(.dragging) .dragDropHelperTop, body:not(.dragging) .dragDropHelperBotto
 
 .bullet.hover{
   background-color: lightblue;
+}
+.zoom>.topLine>.left{
+  display: none;
+}
+.zoom>.topLine>.contentHolder>.content{
+  font-size: 24px;
+  font-weight: bold;
+}
+.zoom.note>.children{
+  border-left: none;
+  margin-left: -1em;
+  padding-left: 0;
+}
+
+.zooming .note:not(.zoom){
+  visibility: hidden;
+  position: absolute;
+  width: 100%;
+  top:0;
+  left:0;
+}
+.zooming .note:not(.zoom)>.topLine{
+  pointer-events: none;
+}
+.zooming .note:not(.zoom)>.topLine{
+  opacity: 0;
+}
+.zoom{
+  position: absolute;
+  top: 1.5em;
+  left:0;
+  visibility: visible;
+}
+.notesContainer>.children>.zoom{
+  top: .3em;
+  left: 1.5em;
+}
+.zoom>.topLine{
+  pointer-events: all;
+  margin-top: .5em;
+  margin-bottom: .5em;
+}
+.zooming .zoom .note{
+  visibility: visible;
+  position: initial;
+}
+.zooming .zoom .note>.topLine{
+  pointer-events: all;
+}
+.zooming .zoom .note>.topLine{
+  opacity: 1;
+}
+.breadcrumbs{
+  display: none;
+}
+.zooming .breadcrumbs{
+  display: block;
+  margin-left: 2em;
+}
+.breadcrumbs span{
+  color: gray;
+  cursor: pointer;
+}
+.breadcrumbs span::before{
+  cursor: default;
+  color: lightgray;
+  content: "";
+  padding-right: .5em;
+  padding-left: .5em;
+}
+.breadcrumbs span:not(:first-child)::before{
+  content: ">";
 }
 .note{
   display: block;
@@ -519,39 +616,19 @@ body:not(.dragging) .dragDropHelperTop, body:not(.dragging) .dragDropHelperBotto
   border-left: 1px solid #E9E9E9;
   padding-left: .2em;
 }
-
-.zoom>.topLine>.left{
-  display: none;
-}
-.zoom>.topLine>.contentHolder>.content{
-  font-size: 24px;
-  font-weight: bold;
-}
-.zoom>.children{
-  margin-left: -.5em;
-  border-left: none;
-  margin-top: 1em;
-  padding-left: 0;
-}
-.zooming #outline .note:not(.zoom){
-  pointer-events: none;
-  visibility: hidden;
-  width: 100%;
-  position: initial;
-}
-.zoom{
-  position: absolute;
-  top:0;
-  left:0;
-  pointer-events: all;
-  visibility: visible;
-}
-.zooming #outline .zoom .note{
-  pointer-events: all;
-  visibility: visible;
-}
 .holdingPen{
   display: none;
+}
+
+.notesContainer{
+  height: calc(100% - 70px);
+  max-height: calc(100% - 70px);
+  overflow-x: auto;
+  overflow-y: scroll;
+}
+[data-top-level-id="INBOX"] .notesContainer{
+  height: calc(100% - 100px);
+  max-height: calc(100% - 100px);
 }
 
 #search{

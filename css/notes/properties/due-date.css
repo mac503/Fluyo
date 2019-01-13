@@ -26,3 +26,7 @@
   color: lightgray;
   padding-left: .2em;
 }
+
+.contentHolder[data-prop-effective-due-date="due"]>.dueDate::before{
+  color: red;
+}
