@@ -358,6 +358,21 @@ div, input{
   cursor: pointer;
   padding-left: .2em;
 }
+.timeEstimate{
+  font-size: .8em;
+  display: none;
+}
+
+.displayTimeEstimate .timeEstimate{
+  display: inline-block;
+}
+
+.timeEstimate[data-prop-time-estimate]::before{
+  content: attr(data-prop-time-estimate);
+  color: gray;
+  font-style: italic;
+  padding-left: .2em;
+}
 .displayDueDates .dueDate[data-prop-due-date]:not([data-prop-effective-due-date=""]){
   display: inline-block;
 }

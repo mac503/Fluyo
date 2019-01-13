@@ -297,6 +297,10 @@ module.exports = `
     Priority<br>
     <input type='checkbox' data-events-handler='display-checkbox' data-display-class='displayPriority'> <input type='checkbox' data-events-handler='display-checkbox' data-display-class='displayEffectivePriority'>
   </div>
+  <div>
+    Time Estimate<br>
+    <input type='checkbox' data-events-handler='display-checkbox' data-display-class='displayTimeEstimate'>
+  </div>
 </div>
 `;
 
@@ -382,6 +386,7 @@ module.exports = function(id){
         <div class='content' contenteditable='true' data-events-handler='note-content'></div>
         <div class='priority'><span class='clearPriority' data-events-handler='clear-priority'></span></div>
         <div class='dueDate' data-events-handler='date-indicator'><span class='clearDate' data-events-handler='clear-date'></span></div>
+        <div class='timeEstimate'></div>
       </div>
     </div>
     <div class='children'></div>
@@ -515,6 +520,14 @@ module.exports = function(div, changes, initialDraw=false){
       prop:'dueDate',
       selector: '.dueDate',
       process: x=>x
+    },
+    {
+      prop:'timeEstimate',
+      selector: '.timeEstimate',
+      process: x=>{
+        if(x>=60) return Math.round(x/60*10)/10 + 'h';
+        else return x + 'm';
+      }
     }
   ].forEach(function(pcase){
     if(changes.hasOwnProperty(pcase.prop)){

@@ -8,6 +8,10 @@ module.exports = `
     Priority<br>
     <input type='checkbox' data-events-handler='display-checkbox' data-display-class='displayPriority'> <input type='checkbox' data-events-handler='display-checkbox' data-display-class='displayEffectivePriority'>
   </div>
+  <div>
+    Time Estimate<br>
+    <input type='checkbox' data-events-handler='display-checkbox' data-display-class='displayTimeEstimate'>
+  </div>
 </div>
 `;
 

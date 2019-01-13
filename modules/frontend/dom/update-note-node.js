@@ -49,6 +49,14 @@ module.exports = function(div, changes, initialDraw=false){
       prop:'dueDate',
       selector: '.dueDate',
       process: x=>x
+    },
+    {
+      prop:'timeEstimate',
+      selector: '.timeEstimate',
+      process: x=>{
+        if(x>=60) return Math.round(x/60*10)/10 + 'h';
+        else return x + 'm';
+      }
     }
   ].forEach(function(pcase){
     if(changes.hasOwnProperty(pcase.prop)){
