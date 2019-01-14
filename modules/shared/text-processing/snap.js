@@ -100,13 +100,23 @@ var cases = [
     regex: /(^|\s)(?:~(?:(?:(\d+(?:.\d+)?)h)|((?:\d+|-))))(\s)/,
     defaultWrap: false,
     getUpdateValue: function(match, groups, original){
-      if(groups[1]) return null;
-      else if(groups[1]) return parseInt(groups[1]) * 60;
+      if(groups[1]) return parseFloat(groups[1]) * 60;
       else if(groups[2] == '-') return null;
       else return groups[2];
     },
     getReplaceValue: ()=>'',
-  }
+  },
+  {
+    prop: 'isTask',
+    regex: /(\[\*\])|(\/\/)/,
+    defaultWrap: true,
+    getUpdateValue: function(match, groups, original){
+      if(groups[1]) return 1;
+      else return 0;
+    },
+    getReplaceValue: ()=>'',
+  },
+
 ];
 
 

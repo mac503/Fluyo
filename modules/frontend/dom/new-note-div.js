@@ -14,6 +14,7 @@ module.exports = function(id){
       </div>
       <div class='contentHolder'>
         <div class='content' contenteditable='true' data-events-handler='note-content'></div>
+        <div class='isTask'></div>
         <div class='priority'><span class='clearPriority' data-events-handler='clear-priority'></span></div>
         <div class='dueDate' data-events-handler='date-indicator'><span class='clearDate' data-events-handler='clear-date'></span></div>
         <div class='timeEstimate'></div>

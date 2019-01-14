@@ -301,6 +301,10 @@ module.exports = `
     Time Estimate<br>
     <input type='checkbox' data-events-handler='display-checkbox' data-display-class='displayTimeEstimate'>
   </div>
+  <div>
+    Project/Comment<br>
+    <input type='checkbox' data-events-handler='display-checkbox' data-display-class='displayIsTask'>
+  </div>
 </div>
 `;
 
@@ -384,6 +388,7 @@ module.exports = function(id){
       </div>
       <div class='contentHolder'>
         <div class='content' contenteditable='true' data-events-handler='note-content'></div>
+        <div class='isTask'></div>
         <div class='priority'><span class='clearPriority' data-events-handler='clear-priority'></span></div>
         <div class='dueDate' data-events-handler='date-indicator'><span class='clearDate' data-events-handler='clear-date'></span></div>
         <div class='timeEstimate'></div>
@@ -478,7 +483,7 @@ var priority = require('../../shared/text-processing/properties/priority');
 
 module.exports = function(div, changes, initialDraw=false){
   //list changes which get applied as class changes
-  ['isParent', 'isCollapsed', 'isComplete', 'isDescendantOfComplete'].forEach(function(prop){
+  ['isParent', 'isCollapsed', 'isComplete', 'isDescendantOfComplete', 'effectiveIsTask'].forEach(function(prop){
     if(changes.hasOwnProperty(prop)){
       if(changes[prop] == true || changes[prop] == 1) div.classList.add(prop);
       else div.classList.remove(prop);
@@ -527,6 +532,14 @@ module.exports = function(div, changes, initialDraw=false){
       process: x=>{
         if(x>=60) return Math.round(x/60*10)/10 + 'h';
         else return x + 'm';
+      }
+    },
+    {
+      prop:'isTask',
+      selector: '.isTask',
+      process: x=>{
+        if(x) return '[*]';
+        else return '//';
       }
     }
   ].forEach(function(pcase){
@@ -1872,7 +1885,8 @@ module.exports = {
   //triggerProp: waterfallProp,
   "isComplete": "isDescendantOfComplete",
   "priority": "effectivePriority",
-  "dueDate": "effectiveDueDate"
+  "dueDate": "effectiveDueDate",
+  "isTask": "effectiveIsTask"
 };
 
 },{}],51:[function(require,module,exports){
@@ -2046,13 +2060,23 @@ var cases = [
     regex: /(^|\s)(?:~(?:(?:(\d+(?:.\d+)?)h)|((?:\d+|-))))(\s)/,
     defaultWrap: false,
     getUpdateValue: function(match, groups, original){
-      if(groups[1]) return null;
-      else if(groups[1]) return parseInt(groups[1]) * 60;
+      if(groups[1]) return parseFloat(groups[1]) * 60;
       else if(groups[2] == '-') return null;
       else return groups[2];
     },
     getReplaceValue: ()=>'',
-  }
+  },
+  {
+    prop: 'isTask',
+    regex: /(\[\*\])|(\/\/)/,
+    defaultWrap: true,
+    getUpdateValue: function(match, groups, original){
+      if(groups[1]) return 1;
+      else return 0;
+    },
+    getReplaceValue: ()=>'',
+  },
+
 ];
 
 

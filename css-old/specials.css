@@ -16,11 +16,6 @@
   pointer-events: none;
 }
 
-.timeEstimate{
-  background-color: #FFE9EC;
-  font-style: italic;
-}
-
 a:link, a:visited, a:active, .tag{
   color: grey;
   text-decoration: underline;

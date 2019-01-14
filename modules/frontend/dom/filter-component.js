@@ -12,6 +12,10 @@ module.exports = `
     Time Estimate<br>
     <input type='checkbox' data-events-handler='display-checkbox' data-display-class='displayTimeEstimate'>
   </div>
+  <div>
+    Project/Comment<br>
+    <input type='checkbox' data-events-handler='display-checkbox' data-display-class='displayIsTask'>
+  </div>
 </div>
 `;
 
