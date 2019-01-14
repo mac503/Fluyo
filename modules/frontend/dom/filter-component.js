@@ -20,6 +20,11 @@ module.exports = `
     Reminder Date<br>
     <input type='checkbox' data-events-handler='display-checkbox' data-display-class='displayReminderDates'>
   </div>
+  <div>
+    Show Completed<br>
+    <input type='checkbox' data-events-handler='display-checkbox' data-display-class='showCompleted'>
+  </div>
+
 </div>
 `;
 

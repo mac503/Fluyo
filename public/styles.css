@@ -194,9 +194,9 @@ div, input{
 .isComplete>.topLine>.contentHolder>.content{
   text-decoration: line-through;
 }
-.isComplete{
+.note.isComplete{
   color: lightgray;
-  //display: none;
+  display: none;
 }
 
 .showCompleted .isComplete{
