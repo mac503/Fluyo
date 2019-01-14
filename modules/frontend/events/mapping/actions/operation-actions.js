@@ -191,25 +191,37 @@ new Action('CLEAR_PRIORITY', function(e){
 
 new Action('CLEAR_DATE', function(e){
   var id = getId(e.target);
-  undoRedo.new([{id:id, operation:'setProp', data:{prop:'dueDate', value:null}}]);
+  if(e.target.closest('[data-events-handler="date-indicator"]').classList.contains('dueDate')){
+    undoRedo.new([{id:id, operation:'setProp', data:{prop:'dueDate', value:null}}]);
+  }
+  else undoRedo.new([{id:id, operation:'setProp', data:{prop:'reminderDate', value:null}}]);
 });
 
 new Action('PICK_DATE', function(e, model){
   var id = getId(e.target);
-  dateBox.drawBox(new Date(model.names[id].effectiveDueDate), e.target, new Date(model.names[id].effectiveDueDate));
+  if(e.target.closest('[data-events-handler="date-indicator"]').classList.contains('dueDate')){
+    dateBox.drawBox(new Date(model.names[id].effectiveDueDate), e.target, new Date(model.names[id].effectiveDueDate));
+  }
+  else dateBox.drawBox(new Date(model.names[id].reminderDate), e.target, new Date(model.names[id].reminderDate));
 });
 
 new Action('CHOOSE_DATE', function(e){
   var thisBox = e.target.closest('.dateBox');
   var id = getId(e.target);
-  undoRedo.new([{id:id, operation:'setProp', data:{prop:'dueDate', value:new Date(1*e.target.dataset.date)}}]);
+  if(e.target.closest('[data-events-handler="date-indicator"]').classList.contains('dueDate')){
+    undoRedo.new([{id:id, operation:'setProp', data:{prop:'dueDate', value:new Date(1*e.target.dataset.date)}}]);
+  }
+  else undoRedo.new([{id:id, operation:'setProp', data:{prop:'reminderDate', value:new Date(1*e.target.dataset.date)}}]);
   thisBox.parentNode.removeChild(thisBox);
 });
 
 new Action('DATE_BOX_CHANGE_MONTH', function(e, model){
   var thisBox = e.target.closest('.dateBox');
   var id = getId(e.target);
-  dateBox.updateBox(new Date(1*e.target.dataset.date), thisBox, new Date(model.names[id].effectiveDueDate));
+  if(e.target.closest('[data-events-handler="date-indicator"]').classList.contains('dueDate')){
+    dateBox.updateBox(new Date(1*e.target.dataset.date), thisBox, new Date(model.names[id].effectiveDueDate));
+  }
+  else dateBox.updateBox(new Date(1*e.target.dataset.date), thisBox, new Date(model.names[id].reminderDate));
 });
 
 new Action('HIDE_DATE_BOX', function(e){

@@ -51,6 +51,11 @@ module.exports = function(div, changes, initialDraw=false){
       process: x=>x
     },
     {
+      prop:'reminderDate',
+      selector: '.reminderDate',
+      process: x=>friendlyDate(x)
+    },
+    {
       prop:'timeEstimate',
       selector: '.timeEstimate',
       process: x=>{

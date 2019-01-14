@@ -305,6 +305,10 @@ module.exports = `
     Project/Comment<br>
     <input type='checkbox' data-events-handler='display-checkbox' data-display-class='displayIsTask'>
   </div>
+  <div>
+    Reminder Date<br>
+    <input type='checkbox' data-events-handler='display-checkbox' data-display-class='displayReminderDates'>
+  </div>
 </div>
 `;
 
@@ -391,6 +395,7 @@ module.exports = function(id){
         <div class='isTask'></div>
         <div class='priority'><span class='clearPriority' data-events-handler='clear-priority'></span></div>
         <div class='dueDate' data-events-handler='date-indicator'><span class='clearDate' data-events-handler='clear-date'></span></div>
+        <div class='reminderDate' data-events-handler='date-indicator'><span class='clearDate' data-events-handler='clear-date'></span></div>
         <div class='timeEstimate'></div>
       </div>
     </div>
@@ -525,6 +530,11 @@ module.exports = function(div, changes, initialDraw=false){
       prop:'dueDate',
       selector: '.dueDate',
       process: x=>x
+    },
+    {
+      prop:'reminderDate',
+      selector: '.reminderDate',
+      process: x=>friendlyDate(x)
     },
     {
       prop:'timeEstimate',
@@ -898,25 +908,37 @@ new Action('CLEAR_PRIORITY', function(e){
 
 new Action('CLEAR_DATE', function(e){
   var id = getId(e.target);
-  undoRedo.new([{id:id, operation:'setProp', data:{prop:'dueDate', value:null}}]);
+  if(e.target.closest('[data-events-handler="date-indicator"]').classList.contains('dueDate')){
+    undoRedo.new([{id:id, operation:'setProp', data:{prop:'dueDate', value:null}}]);
+  }
+  else undoRedo.new([{id:id, operation:'setProp', data:{prop:'reminderDate', value:null}}]);
 });
 
 new Action('PICK_DATE', function(e, model){
   var id = getId(e.target);
-  dateBox.drawBox(new Date(model.names[id].effectiveDueDate), e.target, new Date(model.names[id].effectiveDueDate));
+  if(e.target.closest('[data-events-handler="date-indicator"]').classList.contains('dueDate')){
+    dateBox.drawBox(new Date(model.names[id].effectiveDueDate), e.target, new Date(model.names[id].effectiveDueDate));
+  }
+  else dateBox.drawBox(new Date(model.names[id].reminderDate), e.target, new Date(model.names[id].reminderDate));
 });
 
 new Action('CHOOSE_DATE', function(e){
   var thisBox = e.target.closest('.dateBox');
   var id = getId(e.target);
-  undoRedo.new([{id:id, operation:'setProp', data:{prop:'dueDate', value:new Date(1*e.target.dataset.date)}}]);
+  if(e.target.closest('[data-events-handler="date-indicator"]').classList.contains('dueDate')){
+    undoRedo.new([{id:id, operation:'setProp', data:{prop:'dueDate', value:new Date(1*e.target.dataset.date)}}]);
+  }
+  else undoRedo.new([{id:id, operation:'setProp', data:{prop:'reminderDate', value:new Date(1*e.target.dataset.date)}}]);
   thisBox.parentNode.removeChild(thisBox);
 });
 
 new Action('DATE_BOX_CHANGE_MONTH', function(e, model){
   var thisBox = e.target.closest('.dateBox');
   var id = getId(e.target);
-  dateBox.updateBox(new Date(1*e.target.dataset.date), thisBox, new Date(model.names[id].effectiveDueDate));
+  if(e.target.closest('[data-events-handler="date-indicator"]').classList.contains('dueDate')){
+    dateBox.updateBox(new Date(1*e.target.dataset.date), thisBox, new Date(model.names[id].effectiveDueDate));
+  }
+  else dateBox.updateBox(new Date(1*e.target.dataset.date), thisBox, new Date(model.names[id].reminderDate));
 });
 
 new Action('HIDE_DATE_BOX', function(e){
@@ -2056,6 +2078,73 @@ var cases = [
     }
   },
   {
+    prop: 'reminderDate',
+    regex: /remind me (?:(today|tomorrow)|(next )?((?:mon|tues|wednes|thurs|fri|satur|sun)day)|(next week|next month)|in (?:(1) (week|day|month)|(\d*) (days|weeks|months)))/,
+    defaultWrap: true,
+    getUpdateValue: (match, groups, original)=>{
+      console.log(groups);
+      var date = new Date();
+      date.setHours(2,0,0,0);
+      if(groups[1]){
+        if(groups[1] == 'today') return date;
+        else{
+          date.setDate(date.getDate()+1);
+          return date;
+        }
+      }
+      else if(groups[3]){
+        var nextExplicit = false;
+        if(groups[2] == 'next') nextExplicit = true;
+        var day = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].indexOf(groups[3].substr(0,1).toUpperCase()+groups[3].substr(1).toLowerCase());
+        return getNextXDay(date, day, nextExplicit);
+      }
+      else if(groups[4]){
+        if(groups[4] == 'next week'){
+          return getNextXDay(date, 0);
+        }
+        else if(groups[4] == 'next month'){
+          date.setMonth(date.getMonth()+1);
+          date.setDate(1);
+          return date;
+        }
+      }
+      else if(groups[5]){
+        if(groups[6] == 'day'){
+          date.setDate(date.getDate()+1);
+          return date;
+        }
+        if(groups[6] == 'week'){
+          date.setDate(date.getDate()+7);
+          return date;
+        }
+        if(groups[6] == 'month'){
+          date.setDate(date.getDate()+30);
+          return date;
+        }
+      }
+      else{
+        var quant = parseInt(groups[7]);
+        var days;
+        switch(groups[8]){
+          case "days":
+            days = quant;
+          break;
+          case "weeks":
+            days = quant * 7;
+          break;
+          case "months":
+            days = quant * 30;
+          break;
+        }
+        date.setDate(date.getDate()+days);
+        return date.toISOString();
+      }
+    },
+    getReplaceValue: (match, groups, original)=>{
+      return '';
+    }
+  },
+  {
     prop: 'timeEstimate',
     regex: /(^|\s)(?:~(?:(?:(\d+(?:.\d+)?)h)|((?:\d+|-))))(\s)/,
     defaultWrap: false,
@@ -2068,7 +2157,7 @@ var cases = [
   },
   {
     prop: 'isTask',
-    regex: /(\[\*\])|(\/\/)/,
+    regex: /(?:(\[\*\])|(\/\/))/,
     defaultWrap: true,
     getUpdateValue: function(match, groups, original){
       if(groups[1]) return 1;

@@ -1,0 +1,23 @@
+.displayReminderDates .reminderDate[data-prop-reminder-date]{
+  display: inline-block;
+}
+
+.reminderDate{
+  position: relative;
+  display: none;
+  user-select: none;
+  cursor: pointer;
+  font-size: .8em;
+}
+.reminderDate::before{
+  display: inline-block;
+  content: '\26A0\00A0' attr(data-prop-reminder-date);
+  border-bottom: 1px solid black;
+  border-bottom-style: dotted;
+}
+.reminderDate .clearDate::after{
+  content: "\2716";
+  color: gray;
+  color: lightgray;
+  padding-left: .2em;
+}

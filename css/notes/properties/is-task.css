@@ -9,7 +9,6 @@
 .isTask::before{
   display: inline-block;
   content: attr(data-prop-is-task);
-  padding-left: .2em;
 }
 
 .isTask[data-prop-is-task="//"]{

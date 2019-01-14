@@ -17,6 +17,7 @@ module.exports = function(id){
         <div class='isTask'></div>
         <div class='priority'><span class='clearPriority' data-events-handler='clear-priority'></span></div>
         <div class='dueDate' data-events-handler='date-indicator'><span class='clearDate' data-events-handler='clear-date'></span></div>
+        <div class='reminderDate' data-events-handler='date-indicator'><span class='clearDate' data-events-handler='clear-date'></span></div>
         <div class='timeEstimate'></div>
       </div>
     </div>

@@ -16,6 +16,10 @@ module.exports = `
     Project/Comment<br>
     <input type='checkbox' data-events-handler='display-checkbox' data-display-class='displayIsTask'>
   </div>
+  <div>
+    Reminder Date<br>
+    <input type='checkbox' data-events-handler='display-checkbox' data-display-class='displayReminderDates'>
+  </div>
 </div>
 `;
 
