@@ -7,7 +7,7 @@ var priority = require('../../shared/text-processing/properties/priority');
 
 module.exports = function(div, changes, initialDraw=false){
   //list changes which get applied as class changes
-  ['isParent', 'isCollapsed', 'isComplete', 'isDescendantOfComplete', 'effectiveIsTask'].forEach(function(prop){
+  ['isParent', 'isCollapsed', 'isComplete', 'isDescendantOfComplete', 'effectiveIsTask', 'isTask'].forEach(function(prop){
     if(changes.hasOwnProperty(prop)){
       if(changes[prop] == true || changes[prop] == 1) div.classList.add(prop);
       else div.classList.remove(prop);

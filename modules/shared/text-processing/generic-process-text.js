@@ -1,6 +1,6 @@
 var undoRedo = require('../../frontend/operations-wrappers/undo-redo');
 
-module.exports = function(id, text, cases){
+module.exports = function(id, text, cases, model){
   /*EXAMPLE CASE:
     {
       prop: //property to update based on text found,
@@ -40,6 +40,13 @@ module.exports = function(id, text, cases){
         var groups = result.slice(1);
         var original = result.input;
         var value = rcase.getUpdateValue(match, groups, original);
+        if(rcase.hasOwnProperty('accumulate') && rcase.accumulate == true){
+          var existingValue = model.names[id][rcase.prop];
+          if(existingValue != null){
+            if(existingValue.split(' ').includes(value)) value = existingValue;
+            else value = existingValue + ' '+value;
+          }
+        }
         operations.push({id:id, operation:'setProp', data:{prop:rcase.prop, value:value}});
       } while(regex.flags.includes('g') && (result = regex.exec(processed)) !== null);
       if(rcase.hasOwnProperty('getReplaceValue')) processed = processed.replace(regex, (...arguments)=>{

@@ -1,8 +1,9 @@
 const process = require('./generic-process-text');
 const priority = require('./properties/priority');
+const emotion = require('./properties/emotion');
 
-module.exports = function(id, text){
-  return process(id, text, cases);
+module.exports = function(id, text, model){
+  return process(id, text, cases, model);
 }
 /*EXAMPLE CASE:
   {
@@ -11,7 +12,8 @@ module.exports = function(id, text){
     defaultWrap: //boolean, if true regex gets wrapped in space/start ... space/end,
     getUpdateValue: //function(match, groups, original) to return value to set update prop to,
     getReplaceValue: //function(match, groups, original) to return value to replace match with in string,
-    noMatchUpdateValue: //value to update update prop to if no match found
+    noMatchUpdateValue: //value to update update prop to if no match found,
+    accumulate: //boolean to indicate whether to accumulate values (e.g. tags) or overwrite
   }
 */
 var cases = [
@@ -175,13 +177,35 @@ var cases = [
   },
   {
     prop: 'isTask',
-    regex: /(?:(\[\*\])|(\/\/))/,
+    regex: /(?:(\[\*\])|(\/\/)|(\[-\])|(-\/\/))/,
     defaultWrap: true,
     getUpdateValue: function(match, groups, original){
-      if(groups[1]) return 1;
+      if(groups[3]||groups[4]) return null;
+      else if(groups[1]) return 1;
       else return 0;
     },
     getReplaceValue: ()=>'',
+  },
+  {
+    prop: 'contexts',
+    regex: /@(\S+)\s/,
+    defaultWrap: true,
+    getUpdateValue: (match, groups) => groups[1],
+    getReplaceValue: ()=>'',
+    accumulate: true
+  },
+  {
+    prop: 'emotionalQuality',
+    regex: new RegExp(`\\?(-|${emotion.join('|')})`),
+    defaultWrap: true,
+    getUpdateValue: (match, groups, original)=>{
+      var i = emotion.indexOf(groups[1]);
+      if(i>-1) return groups[1];
+      else return null;
+    },
+    getReplaceValue: (match, groups, original)=>{
+      return '';
+    }
   },
 
 ];

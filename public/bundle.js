@@ -488,7 +488,7 @@ var priority = require('../../shared/text-processing/properties/priority');
 
 module.exports = function(div, changes, initialDraw=false){
   //list changes which get applied as class changes
-  ['isParent', 'isCollapsed', 'isComplete', 'isDescendantOfComplete', 'effectiveIsTask'].forEach(function(prop){
+  ['isParent', 'isCollapsed', 'isComplete', 'isDescendantOfComplete', 'effectiveIsTask', 'isTask'].forEach(function(prop){
     if(changes.hasOwnProperty(prop)){
       if(changes[prop] == true || changes[prop] == 1) div.classList.add(prop);
       else div.classList.remove(prop);
@@ -616,7 +616,7 @@ module.exports = function(div, changes, initialDraw=false){
   }
 }
 
-},{"../../shared/text-processing/properties/priority":52,"../utils/caret":42,"../utils/friendly-date":43,"../utils/is-visible":44,"../utils/proper-case":45,"./dom-helpers":3}],11:[function(require,module,exports){
+},{"../../shared/text-processing/properties/priority":53,"../utils/caret":42,"../utils/friendly-date":43,"../utils/is-visible":44,"../utils/proper-case":45,"./dom-helpers":3}],11:[function(require,module,exports){
 //listen for these events
 var events = ['click', 'input', 'focusin', 'focusout', 'beforeunload', 'keydown', 'hashchange', 'dragstart', 'dragenter', 'dragend'];
 
@@ -724,6 +724,7 @@ var generateId = require('../../../../shared/operations/generate-id');
 var domHelpers = require('../../../dom/dom-helpers');
 var snap = require('../../../../shared/text-processing/snap');
 var dateBox = require('../../../dom/date-box');
+var model = require('../../../model/model');
 
 //operations which require to go through the operations-wrappers
 new Action('INDENT', function(e){
@@ -893,7 +894,7 @@ new Action('REDO', function(e){
 
 new Action('INPUT_CONTENT', function(e){
   var id = getId(e.target);
-  snap(id, e.target.innerText);
+  snap(id, e.target.innerText, model);
   throttle.input(id, e.target.innerText);
 });
 
@@ -947,7 +948,7 @@ new Action('HIDE_DATE_BOX', function(e){
   thisBox.parentNode.removeChild(thisBox);
 });
 
-},{"../../../../shared/operations/generate-id":48,"../../../../shared/text-processing/snap":53,"../../../dom/date-box":2,"../../../dom/dom-helpers":3,"../../../operations-wrappers/undo-redo":39,"../../../utils/caret":42,"./get-id-from-dom-element":14,"./new-action":15,"./throttle":18}],17:[function(require,module,exports){
+},{"../../../../shared/operations/generate-id":48,"../../../../shared/text-processing/snap":54,"../../../dom/date-box":2,"../../../dom/dom-helpers":3,"../../../model/model":34,"../../../operations-wrappers/undo-redo":39,"../../../utils/caret":42,"./get-id-from-dom-element":14,"./new-action":15,"./throttle":18}],17:[function(require,module,exports){
 var sync = require('../../../operations-wrappers/sync-stack');
 var domHelpers = require('../../../dom/dom-helpers');
 var caret = require('../../../utils/caret');
@@ -1914,7 +1915,7 @@ module.exports = {
 },{}],51:[function(require,module,exports){
 var undoRedo = require('../../frontend/operations-wrappers/undo-redo');
 
-module.exports = function(id, text, cases){
+module.exports = function(id, text, cases, model){
   /*EXAMPLE CASE:
     {
       prop: //property to update based on text found,
@@ -1954,6 +1955,13 @@ module.exports = function(id, text, cases){
         var groups = result.slice(1);
         var original = result.input;
         var value = rcase.getUpdateValue(match, groups, original);
+        if(rcase.hasOwnProperty('accumulate') && rcase.accumulate == true){
+          var existingValue = model.names[id][rcase.prop];
+          if(existingValue != null){
+            if(existingValue.split(' ').includes(value)) value = existingValue;
+            else value = existingValue + ' '+value;
+          }
+        }
         operations.push({id:id, operation:'setProp', data:{prop:rcase.prop, value:value}});
       } while(regex.flags.includes('g') && (result = regex.exec(processed)) !== null);
       if(rcase.hasOwnProperty('getReplaceValue')) processed = processed.replace(regex, (...arguments)=>{
@@ -1974,17 +1982,28 @@ module.exports = function(id, text, cases){
 
 },{"../../frontend/operations-wrappers/undo-redo":39}],52:[function(require,module,exports){
 module.exports = [
+  'fear',
+  'eagerness',
+  'reluctance',
+  'delight',
+  'relief-once-completed',
+  'motivated'
+];
+
+},{}],53:[function(require,module,exports){
+module.exports = [
   'normal',
   'important',
   'critical'
 ];
 
-},{}],53:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
 const process = require('./generic-process-text');
 const priority = require('./properties/priority');
+const emotion = require('./properties/emotion');
 
-module.exports = function(id, text){
-  return process(id, text, cases);
+module.exports = function(id, text, model){
+  return process(id, text, cases, model);
 }
 /*EXAMPLE CASE:
   {
@@ -1993,7 +2012,8 @@ module.exports = function(id, text){
     defaultWrap: //boolean, if true regex gets wrapped in space/start ... space/end,
     getUpdateValue: //function(match, groups, original) to return value to set update prop to,
     getReplaceValue: //function(match, groups, original) to return value to replace match with in string,
-    noMatchUpdateValue: //value to update update prop to if no match found
+    noMatchUpdateValue: //value to update update prop to if no match found,
+    accumulate: //boolean to indicate whether to accumulate values (e.g. tags) or overwrite
   }
 */
 var cases = [
@@ -2157,13 +2177,35 @@ var cases = [
   },
   {
     prop: 'isTask',
-    regex: /(?:(\[\*\])|(\/\/))/,
+    regex: /(?:(\[\*\])|(\/\/)|(\[-\])|(-\/\/))/,
     defaultWrap: true,
     getUpdateValue: function(match, groups, original){
-      if(groups[1]) return 1;
+      if(groups[3]||groups[4]) return null;
+      else if(groups[1]) return 1;
       else return 0;
     },
     getReplaceValue: ()=>'',
+  },
+  {
+    prop: 'contexts',
+    regex: /@(\S+)\s/,
+    defaultWrap: true,
+    getUpdateValue: (match, groups) => groups[1],
+    getReplaceValue: ()=>'',
+    accumulate: true
+  },
+  {
+    prop: 'emotionalQuality',
+    regex: new RegExp(`\\?(-|${emotion.join('|')})`),
+    defaultWrap: true,
+    getUpdateValue: (match, groups, original)=>{
+      var i = emotion.indexOf(groups[1]);
+      if(i>-1) return groups[1];
+      else return null;
+    },
+    getReplaceValue: (match, groups, original)=>{
+      return '';
+    }
   },
 
 ];
@@ -2192,4 +2234,4 @@ function getNextXDay(date, day, explicitNext){ //0 = monday
   return tempDate;
 }
 
-},{"./generic-process-text":51,"./properties/priority":52}]},{},[1]);
+},{"./generic-process-text":51,"./properties/emotion":52,"./properties/priority":53}]},{},[1]);

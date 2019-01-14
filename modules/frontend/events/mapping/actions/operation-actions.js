@@ -7,6 +7,7 @@ var generateId = require('../../../../shared/operations/generate-id');
 var domHelpers = require('../../../dom/dom-helpers');
 var snap = require('../../../../shared/text-processing/snap');
 var dateBox = require('../../../dom/date-box');
+var model = require('../../../model/model');
 
 //operations which require to go through the operations-wrappers
 new Action('INDENT', function(e){
@@ -176,7 +177,7 @@ new Action('REDO', function(e){
 
 new Action('INPUT_CONTENT', function(e){
   var id = getId(e.target);
-  snap(id, e.target.innerText);
+  snap(id, e.target.innerText, model);
   throttle.input(id, e.target.innerText);
 });
 
