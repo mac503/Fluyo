@@ -100,6 +100,8 @@ app.post('/api', function(req, res){
       response.missingChanges = await knex('changes').where('id', '>', req.body.lastConfirmed);
     }
 
+    //TODO we really need to select the data in the same transaction as below, using forUpdate() to lock it until we make the update
+
     var updates = req.body.updates;
     var tree = new Tree(model);
     var knownIds = Object.keys(model.names);

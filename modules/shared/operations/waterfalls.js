@@ -3,5 +3,8 @@ module.exports = {
   "isComplete": "isDescendantOfComplete",
   "priority": "effectivePriority",
   "dueDate": "effectiveDueDate",
-  "isTask": "effectiveIsTask"
+  "isTask": "effectiveIsTask",
+  "context": "effectiveContext",
+  "emotionalQuality": "effectiveEmotionalQuality",
+  "energyRequired": "effectiveEnergyRequired"
 };

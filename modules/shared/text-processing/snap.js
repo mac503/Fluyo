@@ -1,6 +1,7 @@
 const process = require('./generic-process-text');
 const priority = require('./properties/priority');
 const emotion = require('./properties/emotion');
+const energy = require('./properties/energy');
 
 module.exports = function(id, text, model){
   return process(id, text, cases, model);
@@ -187,12 +188,19 @@ var cases = [
     getReplaceValue: ()=>'',
   },
   {
-    prop: 'contexts',
-    regex: /@(\S+)\s/,
+    prop: 'tags',
+    regex: /#(\S+)\s/,
     defaultWrap: true,
     getUpdateValue: (match, groups) => groups[1],
     getReplaceValue: ()=>'',
     accumulate: true
+  },
+  {
+    prop: 'context',
+    regex: /@(\S+)\s/,
+    defaultWrap: true,
+    getUpdateValue: (match, groups) => groups[1],
+    getReplaceValue: ()=>''
   },
   {
     prop: 'emotionalQuality',
@@ -207,6 +215,20 @@ var cases = [
       return '';
     }
   },
+  {
+    prop: 'energyRequired',
+    regex: new RegExp(`>(-|${energy.join('|')})`),
+    defaultWrap: true,
+    getUpdateValue: (match, groups, original)=>{
+      var i = energy.indexOf(groups[1]);
+      if(i>-1) return i;
+      else return null;
+    },
+    getReplaceValue: (match, groups, original)=>{
+      return '';
+    }
+  },
+
 
 ];
 

@@ -10,4 +10,8 @@ require('./modules/frontend/model/model').initialise(function(model){
   //pick up the required bullet from the url if necessary
   window.dispatchEvent(new HashChangeEvent("hashchange"));
   //perhaps load any display settings saved in localstorage if necessary?
+
+
+
+  window.get = require('./modules/frontend/priorities/get-priority-list');
 });
