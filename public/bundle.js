@@ -295,7 +295,7 @@ module.exports = `
 <div class='filterComponent'>
   <div>
     Due Date<br>
-    <input type='checkbox' data-events-handler='display-checkbox' data-display-class='displayDueDates'> <input type='checkbox' data-events-handler='display-checkbox' data-display-class='displayEffectiveDueDates'>
+    <input type='checkbox' checked data-events-handler='display-checkbox' data-display-class='displayDueDates'> <input type='checkbox' checked data-events-handler='display-checkbox' data-display-class='displayEffectiveDueDates'>
   </div>
   <div>
     Priority<br>
@@ -421,6 +421,7 @@ module.exports = function(topLevelId){
   div.dataset.outlineComponent = true;
   div.dataset.topLevelId = topLevelId;
   div.dataset.id = topLevelId;
+  div.className = 'displayEffectiveDueDates displayDueDates showCompleted';
   div.innerHTML = `
     ${filterComponent}
     ${topLevelId == 'INBOX' ? `<div class='title'>Inbox</div>` : ''}

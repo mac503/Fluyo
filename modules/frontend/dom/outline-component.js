@@ -5,6 +5,7 @@ module.exports = function(topLevelId){
   div.dataset.outlineComponent = true;
   div.dataset.topLevelId = topLevelId;
   div.dataset.id = topLevelId;
+  div.className = 'displayEffectiveDueDates displayDueDates showCompleted';
   div.innerHTML = `
     ${filterComponent}
     ${topLevelId == 'INBOX' ? `<div class='title'>Inbox</div>` : ''}
