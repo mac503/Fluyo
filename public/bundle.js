@@ -315,7 +315,7 @@ module.exports = `
   </div>
   <div>
     Show Completed<br>
-    <input type='checkbox' data-events-handler='display-checkbox' data-display-class='showCompleted'>
+    <input type='checkbox' checked data-events-handler='display-checkbox' data-display-class='showCompleted'>
   </div>
 
 </div>
